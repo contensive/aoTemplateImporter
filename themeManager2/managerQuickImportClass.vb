@@ -3,8 +3,8 @@ Option Explicit On
 
 Imports Contensive.BaseClasses
 
-Namespace Contensive.addons
-    Public Class templateImporterClass
+Namespace Contensive.addons.themeManager
+    Public Class ManagerQuickImportClass
         Inherits BaseClasses.AddonBaseClass
         '
         Private Const debugging = False
@@ -46,6 +46,229 @@ Namespace Contensive.addons
         Private ApplicationName As String
         Private issueList As String
         Private filesFetchedList As String
+        '
+        '
+        '
+        Friend Function processForm(ByVal cp As CPBaseClass, ByVal srcFormId As Integer, ByVal rqs As String) As Integer
+            Dim nextFormId As Integer = formIdToolsQuickImport
+            Try
+                Dim buttonBar As String = ""
+                Dim templateFilename As String
+                Dim DefaultLink As String
+                Dim BuildVersion As String
+                Dim ManageStyles As Boolean
+                Dim ImportLink As String
+                Dim FormID As Integer
+                Dim TemplateName As String
+                Dim TemplateID As Integer
+                Dim importMethod As String
+                '
+                Dim Button As String = cp.Doc.Var("button")
+                '
+                ApplicationName = cp.Site.Name
+                BuildVersion = cp.Site.GetProperty("buildversion")
+                '
+                ' set defaults
+                '
+                FormID = FormImportOnePage
+                importMethod = importMethodToFile
+                DefaultLink = cp.Visit.GetProperty("TemplateImporterLastLink", "http://www.contensive.com")
+                TemplateName = cp.Visit.GetProperty("TemplateImporterLastTemplateName", "")
+                '
+                If Button <> "" Then
+                    If Button = ButtonCancel Then
+                        Return ""
+                    End If
+                    FormID = cp.Utils.EncodeInteger(cp.Doc.Var(RequestNameFormID))
+                    TemplateID = cp.Utils.EncodeInteger(cp.Visit.GetProperty((VisitPropertyTemplateID)))
+                    '
+                    ' Process buttons
+                    '
+                    Select Case FormID
+                        Case FormImportOnePage
+                            '
+                            ' Process Import form
+                            '
+                            If Button = ButtonCancel Then
+                                '
+                                ' cancel back to root form
+                                '
+                                FormID = FormRoot
+                            Else
+                                DefaultLink = cp.Doc.Var(RequestNameImportLink)
+                                Call cp.Visit.SetProperty("TemplateImporterLastLink", DefaultLink)
+                                TemplateName = cp.Doc.Var(RequestNameTemplateName)
+                                Call cp.Visit.SetProperty("TemplateImporterLastTemplateName", TemplateName)
+                                importMethod = cp.Doc.Var(RequestNameImportMethod)
+                                If importMethod = "" Then
+                                    importMethod = importMethodToFile
+                                End If
+                                templateFilename = TemplateName
+                                templateFilename = templateFilename.Replace(" ", "-")
+                                templateFilename = templateFilename.Replace(" ", "-")
+                                templateFilename = "template_" & templateFilename & ".html"
+                                If cp.File.fileExists(cp.Site.PhysicalWWWPath & templateFilename) Then
+                                    '
+                                    ' template is already in use
+                                    '
+                                    Call cp.UserError.Add("The template file [" & templateFilename & "] is already in use. Please select another templatename.")
+                                Else
+                                    TemplateID = CreateNewTemplate(cp, TemplateName)
+                                    If TemplateID = 0 Then
+                                        Call cp.UserError.Add("There was a problem creating the page Template [" & TemplateName & "]. Select a different name, or use the 'Open' tool to edit the existing template.")
+                                        TemplateName = ""
+                                    Else
+                                        ImportLink = cp.Doc.Var(RequestNameImportLink)
+                                        If ImportLink = "" Then
+                                            Call cp.UserError.Add("To import a template, enter a URL.")
+                                        Else
+                                            ManageStyles = True
+                                            If cp.UserError.OK Then
+                                                Try
+                                                    If (cp.File.ReadVirtual("templates\styles.css") <> "") Then
+                                                        '
+                                                        ' show warning if there is a site stylesheet
+                                                        '
+                                                        Call cp.UserError.Add("This site contains a stylesheet in the site styles. These styles may interfere with the new template. Copy this styleshet to a shared stylesheet and associate it to the templates that need it.")
+                                                    End If
+                                                    Call ImportTemplate(cp, TemplateID, ImportLink, ManageStyles, BuildVersion, templateFilename, importMethod)
+                                                    Call cp.Cache.Clear("page templates")
+                                                    FormID = FormDone
+                                                Catch ex As Exception
+                                                    '
+                                                    ' stay on this form and let htem try again
+                                                    '
+                                                    Call cp.UserError.Add("There was an unexpected problem during the template import. The error message was [" & ex.Message & "]")
+                                                    FormID = FormID
+                                                End Try
+                                            End If
+                                        End If
+                                    End If
+                                End If
+                            End If
+                        Case Else
+                            FormID = FormImportOnePage
+                    End Select
+                End If
+                '
+                ' Get Forms
+                '
+                Hint = "500"
+                Call cp.Doc.AddRefreshQueryString(RequestNameFormID, FormID)
+                Select Case FormID
+                    Case FormDone
+                        '
+                        ' simple one page form -- enter the name for the template and enter URL
+                        '
+                        Dim form As New adminFramework.formSimpleClass
+                        '
+                        form.title = "Template Importer"
+                        form.description = "<p>The template was imported. Any issues will be listed here.</p>"
+                        form.body &= cp.Html.div("<a href=""" & cp.Site.GetProperty("adminURL") & "?af=4&cid=" & cp.Content.GetID("page templates") & "&id=" & TemplateID & """>Edit the new template</a>", , "tiFormCaption")
+                        form.body &= cp.Html.div("<a href=""" & cp.Site.GetProperty("adminURL") & "?cid=" & cp.Content.GetID("shared Styles") & """>View Shared Styles</a>", , "tiFormCaption")
+                        body = form.getHtml(cp)
+
+                        'body &= cp.Html.h1("Template Importer", , "tiTitle")
+                        'body &= cp.Html.p("The template was imported. Any issues will be listed here.", , "tiDescription")
+                        'body &= cp.Html.div("<a href=""" & cp.Site.GetProperty("adminURL") & "?af=4&cid=" & cp.Content.GetID("page templates") & "&id=" & TemplateID & """>Edit the new template</a>", , "tiFormCaption")
+                        'body &= cp.Html.div("<a href=""" & cp.Site.GetProperty("adminURL") & "?cid=" & cp.Content.GetID("shared Styles") & """>View Shared Styles</a>", , "tiFormCaption")
+                    Case Else
+                        '
+                        ' FormImportOnePage - simple one page form -- enter the name for the template and enter URL
+                        '
+                        Dim form As New adminFramework.formNameValueRowsClass
+                        '
+                        form.addFormButton(ButtonCancel)
+                        form.addFormButton(ButtonBeginImport)
+                        form.title = "Template Importer"
+                        form.description = "<p>To create a new template, enter a template name and the URL where the page can be found. The template name must be unique in your website.</p>"
+                        '
+                        'buttonBar &= cp.Html.Button("button", ButtonCancel)
+                        'buttonBar &= cp.Html.Button("button", ButtonBeginImport)
+                        '
+                        'body &= cp.Html.h1("Template Importer", , "tiTitle")
+                        'body &= cp.Html.p("To create a new template, enter a template name and the URL where the page can be found. The template name must be unique in your website.", , "tiDescription")
+                        '
+                        form.addRow()
+                        form.rowName = "Template Name"
+                        form.rowValue = cp.Html.InputText(RequestNameTemplateName, TemplateName)
+                        '
+                        form.addRow()
+                        form.rowName = "Source URL"
+                        form.rowValue = cp.Html.InputText(RequestNameImportLink, DefaultLink)
+                        '
+                        form.addRow()
+                        form.rowName = "Import Method"
+                        form.rowValue = "" _
+                            & cp.Html.div(cp.Html.RadioBox(RequestNameImportMethod, importMethodToFile, importMethod) & "Save to File") _
+                            & cp.Html.div(cp.Html.RadioBox(RequestNameImportMethod, importMethodToRecord, importMethod) & "Save to Record") _
+                            & ""
+                        'body &= cp.Html.ul("<p>Select a template import Method.</p>" _
+                        '    & cp.Html.li(cp.Html.RadioBox(RequestNameImportMethod, importMethodToFile, importMethod) & "Save to File") _
+                        '    & cp.Html.li(cp.Html.RadioBox(RequestNameImportMethod, importMethodToRecord, importMethod) & "Save to Record") _
+                        '    & "")
+                        '
+                        'body &= cp.Html.div("Enter the name of the new template.", , "tiFormCaption")
+                        'body &= cp.Html.div(cp.Html.InputText(RequestNameTemplateName, TemplateName), , "tiFormInput")
+                        ''
+                        'body &= cp.Html.div("Enter the URL where the new template can be found", , "tiFormCaption")
+                        'body &= cp.Html.div(cp.Html.InputText(RequestNameImportLink, DefaultLink), , "tiFormInput")
+                        '
+                        'ns.body = body
+                        body = form.getHtml(cp)
+                        'body &= cp.Html.div(buttonBar, , "tiButtonBar")
+                        'body = cp.Html.Form(body)
+                        '
+                        ' 
+                        '
+                End Select
+                man.title = "Template Importer"
+                man.body = body
+                body = man.getHtml(cp)
+                cp.Doc.AddHeadStyle(man.styleSheet)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            Catch ex As Exception
+                '
+                '
+                '
+                errorReport(ex, cp, "processForm")
+            End Try
+            Return nextFormId
+        End Function
+        '
+        '
+        '
+        Friend Function getForm(ByVal cp As CPBaseClass, ByVal dstFormId As Integer, ByVal rqs As String, ByVal rightNow As Date) As String
+            Dim returnHtml As String = ""
+            '
+            Try
+                '
+                '
+                '
+            Catch ex As Exception
+                '
+                '
+                '
+                errorReport(ex, cp, "getForm")
+            End Try
+            Return returnHtml
+        End Function
+
         '
         '=================================================================================
         '   Aggregate Object Interface
@@ -1512,6 +1735,12 @@ Namespace Contensive.addons
             Return working
             '
         End Function
+        '
+        '
+        '
+        Private Sub errorReport(ByVal ex As Exception, ByVal cp As CPBaseClass, ByVal method As String)
+            cp.Site.ErrorReport(ex, "error in themeManager.managerQuickImportClass." & method)
+        End Sub
         '
         '
         '
