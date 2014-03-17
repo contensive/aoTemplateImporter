@@ -4,7 +4,7 @@ Imports adminFramework
 
 Namespace Contensive.addons.themeManager
     '
-    Public Class ManagerQuickImportClass
+    Public Class managerSampleBClass
         '
         '
         '
@@ -15,7 +15,6 @@ Namespace Contensive.addons.themeManager
                 '
                 ' process ajax buttons and return to list
                 '
-                nextFormId = formIdToolsList
             Catch ex As Exception
                 '
                 '

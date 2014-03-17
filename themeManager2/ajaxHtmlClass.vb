@@ -38,7 +38,7 @@ Namespace Contensive.addons.themeManager
                             '
                             '
                             '
-                            dstFormId = orgList.processForm(CP, srcFormId, rqs)
+                            dstFormId = orgList.processForm(CP, srcFormId, rqs, rightNow)
                     End Select
                 End If
                 '

@@ -36,6 +36,7 @@ Namespace Contensive.addons.themeManager
         '
         Public Const formIdToolsMin As Integer = 130
         Public Const formIdToolsQuickImport As Integer = 130
+        Public Const formIdToolsQuickImportDone As Integer = 131
         Public Const formIdToolsMax As Integer = 139
         '
         ' typeC Forms

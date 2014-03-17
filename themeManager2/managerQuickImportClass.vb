@@ -5,52 +5,56 @@ Imports Contensive.BaseClasses
 
 Namespace Contensive.addons.themeManager
     Public Class ManagerQuickImportClass
-        Inherits BaseClasses.AddonBaseClass
         '
         Private Const debugging = False
         '
-        Public Const RequestNameFormID = "formid"
-        Public Const RequestNameTemplateID = "templateid"
-        Public Const RequestNameTemplateName = "templatename"
-        Public Const RequestNameBodyHTML = "TemplateBody"
-        Public Const RequestNameImportLink = "ImportLink"
-        Public Const RequestNameManageStyles = "ManageStyles"
-        Public Const RequestNameSiteStylesInline = "TemplateImporterSiteStylesInline"
-        Public Const RequestNameSiteStyles = "TemplateImporterSiteStyles"
-        Public Const RequestNameTemplateStyles = "TemplateImporterTemplateStyles"
-        Public Const RequestNameJoomlaFile = "JoomlaFile"
-        Public Const RequestNameImportMethod = "importMethod"
-        Public Const importMethodToFile = "toFile"
-        Public Const importMethodToRecord = "toRecord"
+        Public Const RequestNameFormID As String = "formid"
+        Public Const RequestNameTemplateID As String = "templateid"
+        Public Const rnTemplateName As String = "templatename"
+        Public Const RequestNameBodyHTML As String = "TemplateBody"
+        Public Const rnImportLink As String = "ImportLink"
+        Public Const RequestNameManageStyles As String = "ManageStyles"
+        Public Const RequestNameSiteStylesInline As String = "TemplateImporterSiteStylesInline"
+        Public Const RequestNameSiteStyles As String = "TemplateImporterSiteStyles"
+        Public Const RequestNameTemplateStyles As String = "TemplateImporterTemplateStyles"
+        Public Const RequestNameJoomlaFile As String = "JoomlaFile"
+        Public Const rnImportMethod As String = "importMethod"
         '
-        Public Const VisitPropertyTemplateID = "TemplateImporterTemplateID"
+        Public Const vpLastLink As String = "Theme Manager, Quick Import, Last Link"
+        Public Const vpTemplateName As String = "Theme Manager, Quick Import, Last Template Name"
+        Public Const vpImportMethodId As String = "Theme Manager, Quick Import, Last Import Method Id"
         '
-        Public Const FormEmpty = -1              ' return empty form and Admin will exit the addon
-        Public Const FormRoot = 1
-        Public Const FormCreateNew = 2
-        Public Const FormEdit = 3
-        Public Const FormImport = 4
-        Public Const FormOpen = 5
-        Public Const FormFileView = 6
-        Public Const FormSiteStyles = 7
-        Public Const FormTemplateStyles = 8
-        Public Const FormImportJoomla = 9
-        Public Const FormImportOnePage = 10
-        Public Const FormDone = 11
+        Public Const importMethodIdToFile As Integer = 1
+        Public Const importMethodIdToRecord As Integer = 2
         '
-        Public Const ButtonCreate = " Create New Template "
-        Public Const ButtonBeginEditing = " Begin Editing "
-        Public Const ButtonBeginImport = " Begin Import "
-        Public Const ButtonCancel = " Cancel "
+        Public Const VisitPropertyTemplateID As String = "TemplateImporterTemplateID"
+        ''
+        'Public Const FormEmpty As Integer = -1              ' return empty form and Admin will exit the addon
+        'Public Const FormRoot As Integer = 1
+        'Public Const FormCreateNew As Integer = 2
+        'Public Const FormEdit As Integer = 3
+        'Public Const FormImport As Integer = 4
+        'Public Const FormOpen As Integer = 5
+        'Public Const FormFileView As Integer = 6
+        'Public Const FormSiteStyles As Integer = 7
+        'Public Const FormTemplateStyles As Integer = 8
+        'Public Const FormImportJoomla As Integer = 9
+        'Public Const FormImportOnePage As Integer = 10
+        'Public Const FormDone As Integer = 11
         '
-        Private ApplicationName As String
-        Private issueList As String
-        Private filesFetchedList As String
+        Public Const ButtonCreate As String = " Create New Template "
+        Public Const ButtonBeginEditing As String = " Begin Editing "
+        Public Const ButtonBeginImport As String = " Begin Import "
+        Public Const ButtonCancel As String = " Cancel "
+        '
+        Private ApplicationName As String = ""
+        Private issueList As String = ""
+        Private filesFetchedList As String = ""
         '
         '
         '
-        Friend Function processForm(ByVal cp As CPBaseClass, ByVal srcFormId As Integer, ByVal rqs As String) As Integer
-            Dim nextFormId As Integer = formIdToolsQuickImport
+        Friend Function processForm(ByVal cp As CPBaseClass, ByVal srcFormId As Integer, ByVal rqs As String, rightNow As Date) As Integer
+            Dim dstFormID As Integer = formIdToolsQuickImport
             Try
                 Dim buttonBar As String = ""
                 Dim templateFilename As String
@@ -58,34 +62,27 @@ Namespace Contensive.addons.themeManager
                 Dim BuildVersion As String
                 Dim ManageStyles As Boolean
                 Dim ImportLink As String
-                Dim FormID As Integer
-                Dim TemplateName As String
                 Dim TemplateID As Integer
-                Dim importMethod As String
-                '
-                Dim Button As String = cp.Doc.Var("button")
+                Dim Button As String
+                Dim TemplateName As String
+                Dim importMethodId As String
                 '
                 ApplicationName = cp.Site.Name
                 BuildVersion = cp.Site.GetProperty("buildversion")
                 '
                 ' set defaults
                 '
-                FormID = FormImportOnePage
-                importMethod = importMethodToFile
-                DefaultLink = cp.Visit.GetProperty("TemplateImporterLastLink", "http://www.contensive.com")
-                TemplateName = cp.Visit.GetProperty("TemplateImporterLastTemplateName", "")
+                Button = cp.Doc.GetText("button")
+                importMethodId = cp.Doc.GetInteger(rnImportMethod)
+                TemplateName = cp.Doc.GetText(rnTemplateName)
+                DefaultLink = cp.Doc.GetText(rnImportLink)
                 '
                 If Button <> "" Then
-                    If Button = ButtonCancel Then
-                        Return ""
-                    End If
-                    FormID = cp.Utils.EncodeInteger(cp.Doc.Var(RequestNameFormID))
-                    TemplateID = cp.Utils.EncodeInteger(cp.Visit.GetProperty((VisitPropertyTemplateID)))
                     '
                     ' Process buttons
                     '
-                    Select Case FormID
-                        Case FormImportOnePage
+                    Select Case srcFormId
+                        Case formIdToolsQuickImport
                             '
                             ' Process Import form
                             '
@@ -93,15 +90,10 @@ Namespace Contensive.addons.themeManager
                                 '
                                 ' cancel back to root form
                                 '
-                                FormID = FormRoot
+                                dstFormID = formIdHome
                             Else
-                                DefaultLink = cp.Doc.Var(RequestNameImportLink)
-                                Call cp.Visit.SetProperty("TemplateImporterLastLink", DefaultLink)
-                                TemplateName = cp.Doc.Var(RequestNameTemplateName)
-                                Call cp.Visit.SetProperty("TemplateImporterLastTemplateName", TemplateName)
-                                importMethod = cp.Doc.Var(RequestNameImportMethod)
-                                If importMethod = "" Then
-                                    importMethod = importMethodToFile
+                                If importMethodId = 0 Then
+                                    importMethodId = importMethodIdToFile
                                 End If
                                 templateFilename = TemplateName
                                 templateFilename = templateFilename.Replace(" ", "-")
@@ -118,7 +110,7 @@ Namespace Contensive.addons.themeManager
                                         Call cp.UserError.Add("There was a problem creating the page Template [" & TemplateName & "]. Select a different name, or use the 'Open' tool to edit the existing template.")
                                         TemplateName = ""
                                     Else
-                                        ImportLink = cp.Doc.Var(RequestNameImportLink)
+                                        ImportLink = cp.Doc.Var(rnImportLink)
                                         If ImportLink = "" Then
                                             Call cp.UserError.Add("To import a template, enter a URL.")
                                         Else
@@ -131,124 +123,32 @@ Namespace Contensive.addons.themeManager
                                                         '
                                                         Call cp.UserError.Add("This site contains a stylesheet in the site styles. These styles may interfere with the new template. Copy this styleshet to a shared stylesheet and associate it to the templates that need it.")
                                                     End If
-                                                    Call ImportTemplate(cp, TemplateID, ImportLink, ManageStyles, BuildVersion, templateFilename, importMethod)
+                                                    Call ImportTemplate(cp, TemplateID, ImportLink, ManageStyles, BuildVersion, templateFilename, importMethodId)
                                                     Call cp.Cache.Clear("page templates")
-                                                    FormID = FormDone
+                                                    dstFormID = formIdToolsQuickImportDone
                                                 Catch ex As Exception
                                                     '
                                                     ' stay on this form and let htem try again
                                                     '
                                                     Call cp.UserError.Add("There was an unexpected problem during the template import. The error message was [" & ex.Message & "]")
-                                                    FormID = FormID
+                                                    dstFormID = dstFormID
                                                 End Try
                                             End If
                                         End If
                                     End If
                                 End If
                             End If
-                        Case Else
-                            FormID = FormImportOnePage
+                        Case formIdToolsQuickImportDone
+                            dstFormID = formIdToolsQuickImportDone
                     End Select
                 End If
-                '
-                ' Get Forms
-                '
-                Hint = "500"
-                Call cp.Doc.AddRefreshQueryString(RequestNameFormID, FormID)
-                Select Case FormID
-                    Case FormDone
-                        '
-                        ' simple one page form -- enter the name for the template and enter URL
-                        '
-                        Dim form As New adminFramework.formSimpleClass
-                        '
-                        form.title = "Template Importer"
-                        form.description = "<p>The template was imported. Any issues will be listed here.</p>"
-                        form.body &= cp.Html.div("<a href=""" & cp.Site.GetProperty("adminURL") & "?af=4&cid=" & cp.Content.GetID("page templates") & "&id=" & TemplateID & """>Edit the new template</a>", , "tiFormCaption")
-                        form.body &= cp.Html.div("<a href=""" & cp.Site.GetProperty("adminURL") & "?cid=" & cp.Content.GetID("shared Styles") & """>View Shared Styles</a>", , "tiFormCaption")
-                        body = form.getHtml(cp)
-
-                        'body &= cp.Html.h1("Template Importer", , "tiTitle")
-                        'body &= cp.Html.p("The template was imported. Any issues will be listed here.", , "tiDescription")
-                        'body &= cp.Html.div("<a href=""" & cp.Site.GetProperty("adminURL") & "?af=4&cid=" & cp.Content.GetID("page templates") & "&id=" & TemplateID & """>Edit the new template</a>", , "tiFormCaption")
-                        'body &= cp.Html.div("<a href=""" & cp.Site.GetProperty("adminURL") & "?cid=" & cp.Content.GetID("shared Styles") & """>View Shared Styles</a>", , "tiFormCaption")
-                    Case Else
-                        '
-                        ' FormImportOnePage - simple one page form -- enter the name for the template and enter URL
-                        '
-                        Dim form As New adminFramework.formNameValueRowsClass
-                        '
-                        form.addFormButton(ButtonCancel)
-                        form.addFormButton(ButtonBeginImport)
-                        form.title = "Template Importer"
-                        form.description = "<p>To create a new template, enter a template name and the URL where the page can be found. The template name must be unique in your website.</p>"
-                        '
-                        'buttonBar &= cp.Html.Button("button", ButtonCancel)
-                        'buttonBar &= cp.Html.Button("button", ButtonBeginImport)
-                        '
-                        'body &= cp.Html.h1("Template Importer", , "tiTitle")
-                        'body &= cp.Html.p("To create a new template, enter a template name and the URL where the page can be found. The template name must be unique in your website.", , "tiDescription")
-                        '
-                        form.addRow()
-                        form.rowName = "Template Name"
-                        form.rowValue = cp.Html.InputText(RequestNameTemplateName, TemplateName)
-                        '
-                        form.addRow()
-                        form.rowName = "Source URL"
-                        form.rowValue = cp.Html.InputText(RequestNameImportLink, DefaultLink)
-                        '
-                        form.addRow()
-                        form.rowName = "Import Method"
-                        form.rowValue = "" _
-                            & cp.Html.div(cp.Html.RadioBox(RequestNameImportMethod, importMethodToFile, importMethod) & "Save to File") _
-                            & cp.Html.div(cp.Html.RadioBox(RequestNameImportMethod, importMethodToRecord, importMethod) & "Save to Record") _
-                            & ""
-                        'body &= cp.Html.ul("<p>Select a template import Method.</p>" _
-                        '    & cp.Html.li(cp.Html.RadioBox(RequestNameImportMethod, importMethodToFile, importMethod) & "Save to File") _
-                        '    & cp.Html.li(cp.Html.RadioBox(RequestNameImportMethod, importMethodToRecord, importMethod) & "Save to Record") _
-                        '    & "")
-                        '
-                        'body &= cp.Html.div("Enter the name of the new template.", , "tiFormCaption")
-                        'body &= cp.Html.div(cp.Html.InputText(RequestNameTemplateName, TemplateName), , "tiFormInput")
-                        ''
-                        'body &= cp.Html.div("Enter the URL where the new template can be found", , "tiFormCaption")
-                        'body &= cp.Html.div(cp.Html.InputText(RequestNameImportLink, DefaultLink), , "tiFormInput")
-                        '
-                        'ns.body = body
-                        body = form.getHtml(cp)
-                        'body &= cp.Html.div(buttonBar, , "tiButtonBar")
-                        'body = cp.Html.Form(body)
-                        '
-                        ' 
-                        '
-                End Select
-                man.title = "Template Importer"
-                man.body = body
-                body = man.getHtml(cp)
-                cp.Doc.AddHeadStyle(man.styleSheet)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
             Catch ex As Exception
                 '
                 '
                 '
                 errorReport(ex, cp, "processForm")
             End Try
-            Return nextFormId
+            Return dstFormID
         End Function
         '
         '
@@ -257,151 +157,45 @@ Namespace Contensive.addons.themeManager
             Dim returnHtml As String = ""
             '
             Try
-                '
-                '
-                '
-            Catch ex As Exception
-                '
-                '
-                '
-                errorReport(ex, cp, "getForm")
-            End Try
-            Return returnHtml
-        End Function
-
-        '
-        '=================================================================================
-        '   Aggregate Object Interface
-        '=================================================================================
-        '
-        Public Overrides Function Execute(ByVal cp As CPBaseClass) As Object
-            Dim body As String = ""
-            Dim Hint As String = ""
-            Try
-                Dim man As New adminFramework.pageWithNavClass
-                '
                 Dim buttonBar As String = ""
-                '
-                Dim templateFilename As String
+                Dim body As String = ""
                 Dim DefaultLink As String
-                Dim BuildVersion As String
-                Dim ManageStyles As Boolean
-                Dim ImportLink As String
-                'Dim ToolPageAsm As Object
-                Dim Button As String
-                Dim RQS As String
-                Dim FormID As Integer
                 Dim TemplateName As String
-                Dim TemplateID As Integer
-                Dim importMethod As String
+                Dim importMethodId As Integer
                 '
-                'ToolPageAsm = CreateObject("ccPageAsm.ToolPageClass")
-                '
-                Hint = "100"
-                ApplicationName = cp.Site.Name
-                '
-                BuildVersion = cp.Site.GetProperty("buildversion")
-                RQS = cp.Doc.RefreshQueryString
-                Button = cp.Doc.Var("button")
-                '
-                ' set defaults
-                '
-                FormID = FormImportOnePage
-                importMethod = importMethodToFile
-                DefaultLink = cp.Visit.GetProperty("TemplateImporterLastLink", "http://www.contensive.com")
-                TemplateName = cp.Visit.GetProperty("TemplateImporterLastTemplateName", "")
-                '
-                If Button <> "" Then
-                    If Button = ButtonCancel Then
-                        Return ""
-                    End If
-                    FormID = cp.Utils.EncodeInteger(cp.Doc.Var(RequestNameFormID))
-                    TemplateID = cp.Utils.EncodeInteger(cp.Visit.GetProperty((VisitPropertyTemplateID)))
-                    '
-                    ' Process buttons
-                    '
-                    Select Case FormID
-                        Case FormImportOnePage
-                            '
-                            ' Process Import form
-                            '
-                            If Button = ButtonCancel Then
-                                '
-                                ' cancel back to root form
-                                '
-                                FormID = FormRoot
-                            Else
-                                DefaultLink = cp.Doc.Var(RequestNameImportLink)
-                                Call cp.Visit.SetProperty("TemplateImporterLastLink", DefaultLink)
-                                TemplateName = cp.Doc.Var(RequestNameTemplateName)
-                                Call cp.Visit.SetProperty("TemplateImporterLastTemplateName", TemplateName)
-                                importMethod = cp.Doc.Var(RequestNameImportMethod)
-                                If importMethod = "" Then
-                                    importMethod = importMethodToFile
-                                End If
-                                templateFilename = TemplateName
-                                templateFilename = templateFilename.Replace(" ", "-")
-                                templateFilename = templateFilename.Replace(" ", "-")
-                                templateFilename = "template_" & templateFilename & ".html"
-                                If cp.File.fileExists(cp.Site.PhysicalWWWPath & templateFilename) Then
-                                    '
-                                    ' template is already in use
-                                    '
-                                    Call cp.UserError.Add("The template file [" & templateFilename & "] is already in use. Please select another templatename.")
-                                Else
-                                    TemplateID = CreateNewTemplate(cp, TemplateName)
-                                    If TemplateID = 0 Then
-                                        Call cp.UserError.Add("There was a problem creating the page Template [" & TemplateName & "]. Select a different name, or use the 'Open' tool to edit the existing template.")
-                                        TemplateName = ""
-                                    Else
-                                        ImportLink = cp.Doc.Var(RequestNameImportLink)
-                                        If ImportLink = "" Then
-                                            Call cp.UserError.Add("To import a template, enter a URL.")
-                                        Else
-                                            ManageStyles = True
-                                            If cp.UserError.OK Then
-                                                Try
-                                                    If (cp.File.ReadVirtual("templates\styles.css") <> "") Then
-                                                        '
-                                                        ' show warning if there is a site stylesheet
-                                                        '
-                                                        Call cp.UserError.Add("This site contains a stylesheet in the site styles. These styles may interfere with the new template. Copy this styleshet to a shared stylesheet and associate it to the templates that need it.")
-                                                    End If
-                                                    Call ImportTemplate(cp, TemplateID, ImportLink, ManageStyles, BuildVersion, templateFilename, importMethod)
-                                                    Call cp.Cache.Clear("page templates")
-                                                    FormID = FormDone
-                                                Catch ex As Exception
-                                                    '
-                                                    ' stay on this form and let htem try again
-                                                    '
-                                                    Call cp.UserError.Add("There was an unexpected problem during the template import. The error message was [" & ex.Message & "]")
-                                                    FormID = FormID
-                                                End Try
-                                            End If
-                                        End If
-                                    End If
-                                End If
-                            End If
-                        Case Else
-                            FormID = FormImportOnePage
-                    End Select
+                If cp.Doc.GetText(rnButton) = "" Then
+                    DefaultLink = cp.Visit.GetText(vpLastLink, "http://www.contensive.com")
+                    TemplateName = cp.Visit.GetText(vpTemplateName, "")
+                    importMethodId = cp.Visit.GetInteger(vpImportMethodId)
+                Else
+                    DefaultLink = cp.Doc.GetText(rnImportLink)
+                    TemplateName = cp.Doc.GetText(rnTemplateName)
+                    importMethodId = cp.Doc.GetInteger(rnImportMethod)
+                End If
+                If importMethodId = 0 Then
+                    importMethodId = importMethodIdToFile
+                End If
+                If DefaultLink = "" Then
+                    DefaultLink = "http://www.contensive.com"
                 End If
                 '
-                ' Get Forms
+                Call cp.Visit.SetProperty(vpLastLink, DefaultLink)
+                Call cp.Visit.SetProperty(vpTemplateName, TemplateName)
+                Call cp.Visit.SetProperty(vpImportMethodId, importMethodId)
                 '
-                Hint = "500"
-                Call cp.Doc.AddRefreshQueryString(RequestNameFormID, FormID)
-                Select Case FormID
-                    Case FormDone
+                'Call cp.Doc.AddRefreshQueryString(RequestNameFormID, dstFormId)
+                Select Case dstFormId
+                    Case formIdToolsQuickImportDone
                         '
                         ' simple one page form -- enter the name for the template and enter URL
                         '
                         Dim form As New adminFramework.formSimpleClass
                         '
-                        form.title = "Template Importer"
+                        form.title = "Quick Import"
                         form.description = "<p>The template was imported. Any issues will be listed here.</p>"
-                        form.body &= cp.Html.div("<a href=""" & cp.Site.GetProperty("adminURL") & "?af=4&cid=" & cp.Content.GetID("page templates") & "&id=" & TemplateID & """>Edit the new template</a>", , "tiFormCaption")
+                        form.body &= cp.Html.div("<a href=""" & cp.Site.GetProperty("adminURL") & "?af=4&cid=" & cp.Content.GetID("page templates") & "&id=" & cp.Content.GetRecordID("page templates", TemplateName) & """>Edit the new template</a>", , "tiFormCaption")
                         form.body &= cp.Html.div("<a href=""" & cp.Site.GetProperty("adminURL") & "?cid=" & cp.Content.GetID("shared Styles") & """>View Shared Styles</a>", , "tiFormCaption")
+                        Call form.addFormHidden(rnSrcFormId, dstFormId)
                         body = form.getHtml(cp)
 
                         'body &= cp.Html.h1("Template Importer", , "tiTitle")
@@ -414,60 +208,234 @@ Namespace Contensive.addons.themeManager
                         '
                         Dim form As New adminFramework.formNameValueRowsClass
                         '
-                        form.addFormButton(ButtonCancel)
-                        form.addFormButton(ButtonBeginImport)
-                        form.title = "Template Importer"
-                        form.description = "<p>To create a new template, enter a template name and the URL where the page can be found. The template name must be unique in your website.</p>"
-                        '
-                        'buttonBar &= cp.Html.Button("button", ButtonCancel)
-                        'buttonBar &= cp.Html.Button("button", ButtonBeginImport)
-                        '
-                        'body &= cp.Html.h1("Template Importer", , "tiTitle")
-                        'body &= cp.Html.p("To create a new template, enter a template name and the URL where the page can be found. The template name must be unique in your website.", , "tiDescription")
+                        form.title = "Quick Import"
+                        form.description = "<p>Use this tool to import a remote webpage as a new template. Enter a template name and the URL where the page can be found. The template name must be unique in your website.</p>"
+                        Call form.addFormButton(ButtonCancel)
+                        Call form.addFormButton(ButtonBeginImport)
+                        Call form.addFormHidden(rnSrcFormId, dstFormId)
                         '
                         form.addRow()
                         form.rowName = "Template Name"
-                        form.rowValue = cp.Html.InputText(RequestNameTemplateName, TemplateName)
+                        form.rowValue = cp.Html.InputText(rnTemplateName, TemplateName)
                         '
                         form.addRow()
                         form.rowName = "Source URL"
-                        form.rowValue = cp.Html.InputText(RequestNameImportLink, DefaultLink)
+                        form.rowValue = cp.Html.InputText(rnImportLink, DefaultLink)
                         '
                         form.addRow()
                         form.rowName = "Import Method"
                         form.rowValue = "" _
-                            & cp.Html.div(cp.Html.RadioBox(RequestNameImportMethod, importMethodToFile, importMethod) & "Save to File") _
-                            & cp.Html.div(cp.Html.RadioBox(RequestNameImportMethod, importMethodToRecord, importMethod) & "Save to Record") _
+                            & cp.Html.div(cp.Html.RadioBox(rnImportMethod, importMethodIdToFile, importMethodId.ToString()) & "Save to File") _
+                            & cp.Html.div(cp.Html.RadioBox(rnImportMethod, importMethodIdToRecord, importMethodId) & "Save to Record") _
                             & ""
-                        'body &= cp.Html.ul("<p>Select a template import Method.</p>" _
-                        '    & cp.Html.li(cp.Html.RadioBox(RequestNameImportMethod, importMethodToFile, importMethod) & "Save to File") _
-                        '    & cp.Html.li(cp.Html.RadioBox(RequestNameImportMethod, importMethodToRecord, importMethod) & "Save to Record") _
-                        '    & "")
-                        '
-                        'body &= cp.Html.div("Enter the name of the new template.", , "tiFormCaption")
-                        'body &= cp.Html.div(cp.Html.InputText(RequestNameTemplateName, TemplateName), , "tiFormInput")
-                        ''
-                        'body &= cp.Html.div("Enter the URL where the new template can be found", , "tiFormCaption")
-                        'body &= cp.Html.div(cp.Html.InputText(RequestNameImportLink, DefaultLink), , "tiFormInput")
-                        '
-                        'ns.body = body
                         body = form.getHtml(cp)
-                        'body &= cp.Html.div(buttonBar, , "tiButtonBar")
-                        'body = cp.Html.Form(body)
-                        '
-                        ' 
-                        '
                 End Select
-                man.title = "Template Importer"
-                man.body = body
-                body = man.getHtml(cp)
-                cp.Doc.AddHeadStyle(man.styleSheet)
+                returnHtml = body
             Catch ex As Exception
-                HandleClassError(cp, ex, "GetContent", "trap, Hint=[" & Hint & "]")
-                body = "<p>There was an unknown problem with the template importer. The message returned was [" & ex.Message & "]."
+                errorReport(ex, cp, "getForm")
             End Try
-            Return body
+            Return returnHtml
         End Function
+
+        ''
+        ''=================================================================================
+        ''   Aggregate Object Interface
+        ''=================================================================================
+        ''
+        'Public Overrides Function Execute(ByVal cp As CPBaseClass) As Object
+        '    Dim body As String = ""
+        '    Dim Hint As String = ""
+        '    Try
+        '        Dim man As New adminFramework.pageWithNavClass
+        '        '
+        '        Dim buttonBar As String = ""
+        '        '
+        '        Dim templateFilename As String
+        '        Dim DefaultLink As String
+        '        Dim BuildVersion As String
+        '        Dim ManageStyles As Boolean
+        '        Dim ImportLink As String
+        '        'Dim ToolPageAsm As Object
+        '        Dim Button As String
+        '        Dim RQS As String
+        '        'Dim FormID As Integer
+        '        Dim TemplateName As String
+        '        Dim TemplateID As Integer
+        '        Dim importMethod As String
+        '        '
+        '        'ToolPageAsm = CreateObject("ccPageAsm.ToolPageClass")
+        '        '
+        '        Hint = "100"
+        '        ApplicationName = cp.Site.Name
+        '        '
+        '        BuildVersion = cp.Site.GetProperty("buildversion")
+        '        RQS = cp.Doc.RefreshQueryString
+        '        Button = cp.Doc.Var("button")
+        '        '
+        '        ' set defaults
+        '        '
+        '        FormID = FormImportOnePage
+        '        importMethod = importMethodIdToFile
+        '        DefaultLink = cp.Visit.GetProperty("TemplateImporterLastLink", "http://www.contensive.com")
+        '        TemplateName = cp.Visit.GetProperty("TemplateImporterLastTemplateName", "")
+        '        '
+        '        If Button <> "" Then
+        '            If Button = ButtonCancel Then
+        '                Return ""
+        '            End If
+        '            FormID = cp.Utils.EncodeInteger(cp.Doc.Var(RequestNameFormID))
+        '            TemplateID = cp.Utils.EncodeInteger(cp.Visit.GetProperty((VisitPropertyTemplateID)))
+        '            '
+        '            ' Process buttons
+        '            '
+        '            Select Case FormID
+        '                Case FormImportOnePage
+        '                    '
+        '                    ' Process Import form
+        '                    '
+        '                    If Button = ButtonCancel Then
+        '                        '
+        '                        ' cancel back to root form
+        '                        '
+        '                        FormID = FormRoot
+        '                    Else
+        '                        DefaultLink = cp.Doc.Var(rnImportLink)
+        '                        Call cp.Visit.SetProperty("TemplateImporterLastLink", DefaultLink)
+        '                        TemplateName = cp.Doc.Var(rnTemplateName)
+        '                        Call cp.Visit.SetProperty("TemplateImporterLastTemplateName", TemplateName)
+        '                        importMethod = cp.Doc.Var(rnImportMethod)
+        '                        If importMethod = "" Then
+        '                            importMethod = importMethodIdToFile
+        '                        End If
+        '                        templateFilename = TemplateName
+        '                        templateFilename = templateFilename.Replace(" ", "-")
+        '                        templateFilename = templateFilename.Replace(" ", "-")
+        '                        templateFilename = "template_" & templateFilename & ".html"
+        '                        If cp.File.fileExists(cp.Site.PhysicalWWWPath & templateFilename) Then
+        '                            '
+        '                            ' template is already in use
+        '                            '
+        '                            Call cp.UserError.Add("The template file [" & templateFilename & "] is already in use. Please select another templatename.")
+        '                        Else
+        '                            TemplateID = CreateNewTemplate(cp, TemplateName)
+        '                            If TemplateID = 0 Then
+        '                                Call cp.UserError.Add("There was a problem creating the page Template [" & TemplateName & "]. Select a different name, or use the 'Open' tool to edit the existing template.")
+        '                                TemplateName = ""
+        '                            Else
+        '                                ImportLink = cp.Doc.Var(rnImportLink)
+        '                                If ImportLink = "" Then
+        '                                    Call cp.UserError.Add("To import a template, enter a URL.")
+        '                                Else
+        '                                    ManageStyles = True
+        '                                    If cp.UserError.OK Then
+        '                                        Try
+        '                                            If (cp.File.ReadVirtual("templates\styles.css") <> "") Then
+        '                                                '
+        '                                                ' show warning if there is a site stylesheet
+        '                                                '
+        '                                                Call cp.UserError.Add("This site contains a stylesheet in the site styles. These styles may interfere with the new template. Copy this styleshet to a shared stylesheet and associate it to the templates that need it.")
+        '                                            End If
+        '                                            Call ImportTemplate(cp, TemplateID, ImportLink, ManageStyles, BuildVersion, templateFilename, importMethod)
+        '                                            Call cp.Cache.Clear("page templates")
+        '                                            FormID = FormDone
+        '                                        Catch ex As Exception
+        '                                            '
+        '                                            ' stay on this form and let htem try again
+        '                                            '
+        '                                            Call cp.UserError.Add("There was an unexpected problem during the template import. The error message was [" & ex.Message & "]")
+        '                                            FormID = FormID
+        '                                        End Try
+        '                                    End If
+        '                                End If
+        '                            End If
+        '                        End If
+        '                    End If
+        '                Case Else
+        '                    FormID = FormImportOnePage
+        '            End Select
+        '        End If
+        '        '
+        '        ' Get Forms
+        '        '
+        '        Hint = "500"
+        '        Call cp.Doc.AddRefreshQueryString(RequestNameFormID, FormID)
+        '        Select Case FormID
+        '            Case FormDone
+        '                '
+        '                ' simple one page form -- enter the name for the template and enter URL
+        '                '
+        '                Dim form As New adminFramework.formSimpleClass
+        '                '
+        '                form.title = "Template Importer"
+        '                form.description = "<p>The template was imported. Any issues will be listed here.</p>"
+        '                form.body &= cp.Html.div("<a href=""" & cp.Site.GetProperty("adminURL") & "?af=4&cid=" & cp.Content.GetID("page templates") & "&id=" & TemplateID & """>Edit the new template</a>", , "tiFormCaption")
+        '                form.body &= cp.Html.div("<a href=""" & cp.Site.GetProperty("adminURL") & "?cid=" & cp.Content.GetID("shared Styles") & """>View Shared Styles</a>", , "tiFormCaption")
+        '                body = form.getHtml(cp)
+
+        '                'body &= cp.Html.h1("Template Importer", , "tiTitle")
+        '                'body &= cp.Html.p("The template was imported. Any issues will be listed here.", , "tiDescription")
+        '                'body &= cp.Html.div("<a href=""" & cp.Site.GetProperty("adminURL") & "?af=4&cid=" & cp.Content.GetID("page templates") & "&id=" & TemplateID & """>Edit the new template</a>", , "tiFormCaption")
+        '                'body &= cp.Html.div("<a href=""" & cp.Site.GetProperty("adminURL") & "?cid=" & cp.Content.GetID("shared Styles") & """>View Shared Styles</a>", , "tiFormCaption")
+        '            Case Else
+        '                '
+        '                ' FormImportOnePage - simple one page form -- enter the name for the template and enter URL
+        '                '
+        '                Dim form As New adminFramework.formNameValueRowsClass
+        '                '
+        '                form.addFormButton(ButtonCancel)
+        '                form.addFormButton(ButtonBeginImport)
+        '                form.title = "Template Importer"
+        '                form.description = "<p>To create a new template, enter a template name and the URL where the page can be found. The template name must be unique in your website.</p>"
+        '                '
+        '                'buttonBar &= cp.Html.Button("button", ButtonCancel)
+        '                'buttonBar &= cp.Html.Button("button", ButtonBeginImport)
+        '                '
+        '                'body &= cp.Html.h1("Template Importer", , "tiTitle")
+        '                'body &= cp.Html.p("To create a new template, enter a template name and the URL where the page can be found. The template name must be unique in your website.", , "tiDescription")
+        '                '
+        '                form.addRow()
+        '                form.rowName = "Template Name"
+        '                form.rowValue = cp.Html.InputText(rnTemplateName, TemplateName)
+        '                '
+        '                form.addRow()
+        '                form.rowName = "Source URL"
+        '                form.rowValue = cp.Html.InputText(rnImportLink, DefaultLink)
+        '                '
+        '                form.addRow()
+        '                form.rowName = "Import Method"
+        '                form.rowValue = "" _
+        '                    & cp.Html.div(cp.Html.RadioBox(rnImportMethod, importMethodIdToFile, importMethod) & "Save to File") _
+        '                    & cp.Html.div(cp.Html.RadioBox(rnImportMethod, importMethodIdToRecord, importMethod) & "Save to Record") _
+        '                    & ""
+        '                'body &= cp.Html.ul("<p>Select a template import Method.</p>" _
+        '                '    & cp.Html.li(cp.Html.RadioBox(RequestNameImportMethod, importMethodToFile, importMethod) & "Save to File") _
+        '                '    & cp.Html.li(cp.Html.RadioBox(RequestNameImportMethod, importMethodToRecord, importMethod) & "Save to Record") _
+        '                '    & "")
+        '                '
+        '                'body &= cp.Html.div("Enter the name of the new template.", , "tiFormCaption")
+        '                'body &= cp.Html.div(cp.Html.InputText(RequestNameTemplateName, TemplateName), , "tiFormInput")
+        '                ''
+        '                'body &= cp.Html.div("Enter the URL where the new template can be found", , "tiFormCaption")
+        '                'body &= cp.Html.div(cp.Html.InputText(RequestNameImportLink, DefaultLink), , "tiFormInput")
+        '                '
+        '                'ns.body = body
+        '                body = form.getHtml(cp)
+        '                'body &= cp.Html.div(buttonBar, , "tiButtonBar")
+        '                'body = cp.Html.Form(body)
+        '                '
+        '                ' 
+        '                '
+        '        End Select
+        '        man.title = "Template Importer"
+        '        man.body = body
+        '        body = man.getHtml(cp)
+        '        cp.Doc.AddHeadStyle(man.styleSheet)
+        '    Catch ex As Exception
+        '        HandleClassError(cp, ex, "GetContent", "trap, Hint=[" & Hint & "]")
+        '        body = "<p>There was an unknown problem with the template importer. The message returned was [" & ex.Message & "]."
+        '    End Try
+        '    Return body
+        'End Function
         '
         '=================================================================================
         '   Handle errors from this class
@@ -579,7 +547,8 @@ Namespace Contensive.addons.themeManager
                 Dim StyleTag As String = ""
                 Dim BodyTag As String = ""
                 Dim Pos As Integer
-                Dim LinkType As String
+                Dim linkType As String
+                Dim linkRel As String
                 Dim StyleSheet As String
                 Dim Link As String
                 Dim Position As Integer
@@ -601,23 +570,29 @@ Namespace Contensive.addons.themeManager
                 Dim inlineStyleNew As String
                 '
                 'Dim Output As FastString.FastStringClass = New FastString.FastStringClass
-                Dim out As String
-                Dim kmaParse As kmaHTML.ParseClass = New kmaHTML.ParseClass
+                Dim out As String = ""
+                'Dim kmaParse As kmaHTML.ParseClass = New kmaHTML.ParseClass
                 Dim webClient As System.Net.WebClient = New System.Net.WebClient()
                 Dim cs As CPCSBaseClass = cp.CSNew
+                Dim htmlParse As Object
+                Try
+                    htmlParse = CreateObject("cpCom.htmlParseClass")
+                Catch ex As Exception
+                    htmlParse = CreateObject("kmaHTML.ParseClass")
+                End Try
                 '
                 Doc = Replace(Doc, "<span><span>", "<span class=""fpo""><span class=""fpo"">", 1, 99, CompareMethod.Text)
-                Call kmaParse.Load(Doc)
+                Call htmlParse.Load(Doc)
                 ElementPointer = 0
                 FontsUsedCount = 0
-                ElementCount = kmaParse.ElementCount
+                ElementCount = htmlParse.ElementCount
                 hint &= ",elementcount=" & ElementCount
                 '
                 Do While ElementPointer < ElementCount
-                    ElementText = kmaParse.Text(ElementPointer)
-                    If kmaParse.IsTag(ElementPointer) Then
+                    ElementText = htmlParse.Text(ElementPointer)
+                    If htmlParse.IsTag(ElementPointer) Then
                         TagCount = TagCount + 1
-                        TagName = kmaParse.TagName(ElementPointer)
+                        TagName = htmlParse.TagName(ElementPointer)
                         hint &= ",tag=" & TagName
                         Select Case UCase(TagName)
                             Case "HEAD"
@@ -625,13 +600,13 @@ Namespace Contensive.addons.themeManager
                             Case "/HEAD"
                                 IsInHead = False
                             Case "FORM"
-                                Link = kmaParse.ElementAttribute(ElementPointer, "action")
+                                Link = htmlParse.ElementAttribute(ElementPointer, "action")
                                 If IsLinkToThisHost(cp, SourceHost, Link) Then
                                     remoteRootRelativeLink = ConvertLinkToRootRelative(cp, Link, BasePath)
                                     ElementText = Replace(ElementText, Link, remoteRootRelativeLink)
                                 End If
                             Case "TD"
-                                Link = kmaParse.ElementAttribute(ElementPointer, "Background")
+                                Link = htmlParse.ElementAttribute(ElementPointer, "Background")
                                 If IsLinkToThisHost(cp, SourceHost, Link) Then
                                     remoteRootRelativeLink = ConvertLinkToRootRelative(cp, Link, BasePath)
                                     localRootRelativeLink = convertRemoteToLocalLink(cp, remoteRootRelativeLink)
@@ -640,7 +615,7 @@ Namespace Contensive.addons.themeManager
                                     ElementText = Replace(ElementText, Link, localRootRelativeLink)
                                 End If
                             Case "BODY"
-                                Link = kmaParse.ElementAttribute(ElementPointer, "Background")
+                                Link = htmlParse.ElementAttribute(ElementPointer, "Background")
                                 If IsLinkToThisHost(cp, SourceHost, Link) Then
                                     remoteRootRelativeLink = ConvertLinkToRootRelative(cp, Link, BasePath)
                                     localRootRelativeLink = convertRemoteToLocalLink(cp, remoteRootRelativeLink)
@@ -660,7 +635,7 @@ Namespace Contensive.addons.themeManager
                             Case "BASE"
                                 '
                                 'UPGRADE_WARNING: Couldn't resolve default property of object kmaParse.ElementAttribute. Click for more: 'ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?keyword="6A50421D-15FE-4896-8A1B-2EC21E9037B2"'
-                                Link = kmaParse.ElementAttribute(ElementPointer, "HREF")
+                                Link = htmlParse.ElementAttribute(ElementPointer, "HREF")
                                 'UPGRADE_WARNING: Couldn't resolve default property of object IsLinkToThisHost(cp,SourceHost, Link). Click for more: 'ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?keyword="6A50421D-15FE-4896-8A1B-2EC21E9037B2"'
                                 If IsLinkToThisHost(cp, SourceHost, Link) Then
                                     BasePath = GetBasePath(cp, Link)
@@ -669,7 +644,7 @@ Namespace Contensive.addons.themeManager
                             Case "A"
                                 '
                                 'UPGRADE_WARNING: Couldn't resolve default property of object kmaParse.ElementAttribute. Click for more: 'ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?keyword="6A50421D-15FE-4896-8A1B-2EC21E9037B2"'
-                                Link = kmaParse.ElementAttribute(ElementPointer, "HREF")
+                                Link = htmlParse.ElementAttribute(ElementPointer, "HREF")
                                 'UPGRADE_WARNING: Couldn't resolve default property of object IsLinkToThisHost(cp,SourceHost, Link). Click for more: 'ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?keyword="6A50421D-15FE-4896-8A1B-2EC21E9037B2"'
                                 If IsLinkToThisHost(cp, SourceHost, Link) Then
                                     remoteRootRelativeLink = ConvertLinkToRootRelative(cp, Link, BasePath)
@@ -680,9 +655,9 @@ Namespace Contensive.addons.themeManager
                             Case "META"
                                 '
                                 'UPGRADE_WARNING: Couldn't resolve default property of object kmaParse.ElementAttribute. Click for more: 'ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?keyword="6A50421D-15FE-4896-8A1B-2EC21E9037B2"'
-                                TagHTTPEquiv = kmaParse.ElementAttribute(ElementPointer, "HTTPEquiv")
+                                TagHTTPEquiv = htmlParse.ElementAttribute(ElementPointer, "HTTPEquiv")
                                 'UPGRADE_WARNING: Couldn't resolve default property of object kmaParse.ElementAttribute. Click for more: 'ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?keyword="6A50421D-15FE-4896-8A1B-2EC21E9037B2"'
-                                TagContent = kmaParse.ElementAttribute(ElementPointer, "Content")
+                                TagContent = htmlParse.ElementAttribute(ElementPointer, "Content")
                                 If UCase(CStr(TagHTTPEquiv = "REFRESH")) And (TagContent <> "") Then
                                     Link = UCase(TagContent)
                                     Position = InStr(1, Link, "URL")
@@ -690,13 +665,13 @@ Namespace Contensive.addons.themeManager
                                         Position = Position + 3
                                         Do While Mid(Link, Position, 1) = " "
                                             Position = Position + 1
-                                            System.Windows.Forms.Application.DoEvents()
+                                            'System.Windows.Forms.Application.DoEvents()
                                         Loop
                                         If Mid(Link, Position, 1) = "=" Then
                                             Position = Position + 1
                                             Do While Mid(Link, Position, 1) = " "
                                                 Position = Position + 1
-                                                System.Windows.Forms.Application.DoEvents()
+                                                'System.Windows.Forms.Application.DoEvents()
                                             Loop
                                             Link = Trim(Mid(TagContent, Position))
                                             'UPGRADE_WARNING: Couldn't resolve default property of object IsLinkToThisHost(cp,SourceHost, Link). Click for more: 'ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?keyword="6A50421D-15FE-4896-8A1B-2EC21E9037B2"'
@@ -715,7 +690,7 @@ Namespace Contensive.addons.themeManager
                             Case "AREA"
                                 '
                                 'UPGRADE_WARNING: Couldn't resolve default property of object kmaParse.ElementAttribute. Click for more: 'ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?keyword="6A50421D-15FE-4896-8A1B-2EC21E9037B2"'
-                                Link = kmaParse.ElementAttribute(ElementPointer, "HREF")
+                                Link = htmlParse.ElementAttribute(ElementPointer, "HREF")
                                 'UPGRADE_WARNING: Couldn't resolve default property of object IsLinkToThisHost(cp,SourceHost, Link). Click for more: 'ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?keyword="6A50421D-15FE-4896-8A1B-2EC21E9037B2"'
                                 If IsLinkToThisHost(cp, SourceHost, Link) Then
                                     remoteRootRelativeLink = ConvertLinkToRootRelative(cp, Link, BasePath)
@@ -725,7 +700,7 @@ Namespace Contensive.addons.themeManager
                             Case "IMG"
                                 '
                                 'UPGRADE_WARNING: Couldn't resolve default property of object kmaParse.ElementAttribute. Click for more: 'ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?keyword="6A50421D-15FE-4896-8A1B-2EC21E9037B2"'
-                                Link = kmaParse.ElementAttribute(ElementPointer, "SRC")
+                                Link = htmlParse.ElementAttribute(ElementPointer, "SRC")
                                 'UPGRADE_WARNING: Couldn't resolve default property of object IsLinkToThisHost(cp,SourceHost, Link). Click for more: 'ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?keyword="6A50421D-15FE-4896-8A1B-2EC21E9037B2"'
                                 If IsLinkToThisHost(cp, SourceHost, Link) Then
                                     remoteRootRelativeLink = ConvertLinkToRootRelative(cp, Link, BasePath)
@@ -745,7 +720,7 @@ Namespace Contensive.addons.themeManager
                             Case "EMBED"
                                 '
                                 'UPGRADE_WARNING: Couldn't resolve default property of object kmaParse.ElementAttribute. Click for more: 'ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?keyword="6A50421D-15FE-4896-8A1B-2EC21E9037B2"'
-                                Link = kmaParse.ElementAttribute(ElementPointer, "SRC")
+                                Link = htmlParse.ElementAttribute(ElementPointer, "SRC")
                                 'UPGRADE_WARNING: Couldn't resolve default property of object IsLinkToThisHost(cp,SourceHost, Link). Click for more: 'ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?keyword="6A50421D-15FE-4896-8A1B-2EC21E9037B2"'
                                 If IsLinkToThisHost(cp, SourceHost, Link) Then
                                     remoteRootRelativeLink = ConvertLinkToRootRelative(cp, Link, BasePath)
@@ -765,7 +740,7 @@ Namespace Contensive.addons.themeManager
                             Case "FRAMESET"
                                 '
                                 'UPGRADE_WARNING: Couldn't resolve default property of object kmaParse.ElementAttribute. Click for more: 'ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?keyword="6A50421D-15FE-4896-8A1B-2EC21E9037B2"'
-                                Link = kmaParse.ElementAttribute(ElementPointer, "SRC")
+                                Link = htmlParse.ElementAttribute(ElementPointer, "SRC")
                                 'UPGRADE_WARNING: Couldn't resolve default property of object IsLinkToThisHost(cp,SourceHost, Link). Click for more: 'ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?keyword="6A50421D-15FE-4896-8A1B-2EC21E9037B2"'
                                 If IsLinkToThisHost(cp, SourceHost, Link) Then
                                     remoteRootRelativeLink = ConvertLinkToRootRelative(cp, Link, BasePath)
@@ -785,7 +760,7 @@ Namespace Contensive.addons.themeManager
                             Case "FRAME"
                                 '
                                 'UPGRADE_WARNING: Couldn't resolve default property of object kmaParse.ElementAttribute. Click for more: 'ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?keyword="6A50421D-15FE-4896-8A1B-2EC21E9037B2"'
-                                Link = kmaParse.ElementAttribute(ElementPointer, "SRC")
+                                Link = htmlParse.ElementAttribute(ElementPointer, "SRC")
                                 'UPGRADE_WARNING: Couldn't resolve default property of object IsLinkToThisHost(cp,SourceHost, Link). Click for more: 'ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?keyword="6A50421D-15FE-4896-8A1B-2EC21E9037B2"'
                                 If IsLinkToThisHost(cp, SourceHost, Link) Then
                                     remoteRootRelativeLink = ConvertLinkToRootRelative(cp, Link, BasePath)
@@ -804,13 +779,14 @@ Namespace Contensive.addons.themeManager
                                 End If
                             Case "LINK"
                                 '
-                                'UPGRADE_WARNING: Couldn't resolve default property of object kmaParse.ElementAttribute. Click for more: 'ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?keyword="6A50421D-15FE-4896-8A1B-2EC21E9037B2"'
-                                Link = kmaParse.ElementAttribute(ElementPointer, "HREF")
-                                'UPGRADE_WARNING: Couldn't resolve default property of object kmaParse.ElementAttribute. Click for more: 'ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?keyword="6A50421D-15FE-4896-8A1B-2EC21E9037B2"'
-                                LinkType = kmaParse.ElementAttribute(ElementPointer, "TYPE")
-                                hint &= ",link=" & Link & " type=" & LinkType
-                                If (IsLinkToThisHost(cp, SourceHost, Link)) And (LCase(LinkType) = "text/css") Then
-                                    remoteRootRelativeLink = ConvertLinkToRootRelative(cp, Link, BasePath)
+                                Dim linkHref As String
+
+                                linkHref = htmlParse.ElementAttribute(ElementPointer, "HREF")
+                                linkRel = htmlParse.ElementAttribute(ElementPointer, "REL")
+                                linkType = htmlParse.ElementAttribute(ElementPointer, "TYPE")
+                                hint &= ",linkHref=" & linkHref & ", linkType=" & linkType & ", linkRel=" & linkRel
+                                If (IsLinkToThisHost(cp, SourceHost, linkHref)) And ((LCase(linkType) = "text/css") Or (LCase(linkRel) = "stylesheet")) Then
+                                    remoteRootRelativeLink = ConvertLinkToRootRelative(cp, linkHref, BasePath)
                                     hint &= ",100"
                                     If ManageStyles Then
                                         '
@@ -833,21 +809,12 @@ Namespace Contensive.addons.themeManager
                                         ' inmanaged css or other files, download them and convert link
                                         '
                                         hint &= ",120"
-                                        Call ConvertStyleLink_HandleImports(cp, Link, BasePath, SourceHost, "", TemplateID, tempPath)
+                                        Call ConvertStyleLink_HandleImports(cp, linkHref, BasePath, SourceHost, "", TemplateID, tempPath)
                                         '
                                         localRootRelativeLink = convertRemoteToLocalLink(cp, remoteRootRelativeLink)
                                         virtualfilename = convertRootRelativeLinkToPathFilename(cp, localRootRelativeLink)
                                         Call GetURLToFile(cp, SourceHost & remoteRootRelativeLink, cp.Site.PhysicalWWWPath & virtualfilename, tempPath)
-                                        ElementText = Replace(ElementText, Link, localRootRelativeLink)
-                                        'virtualfilename = convertRootRelativeLinkToPathFilename(cp, remoteRootRelativeLink)
-                                        ''virtualfilename = Replace(cp.Utils.DecodeUrl(RootRelativeLink), "/", "\")
-                                        ''If virtualfilename.Substring(0, 1) = "\" Then
-                                        ''    virtualfilename = virtualfilename.Substring(1)
-                                        ''End If
-                                        'hint &= ",130"
-                                        'Call GetURLToFile(cp, SourceHost & remoteRootRelativeLink, cp.Site.PhysicalWWWPath & virtualfilename, tempPath)
-                                        'hint &= ",140"
-                                        'ElementText = Replace(ElementText, Link, remoteRootRelativeLink)
+                                        ElementText = Replace(ElementText, linkHref, localRootRelativeLink)
                                     End If
                                 End If
                                 hint &= ",150"
@@ -857,7 +824,7 @@ Namespace Contensive.addons.themeManager
                             Case "SCRIPT"
                                 '
                                 'UPGRADE_WARNING: Couldn't resolve default property of object kmaParse.ElementAttribute. Click for more: 'ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?keyword="6A50421D-15FE-4896-8A1B-2EC21E9037B2"'
-                                Link = kmaParse.ElementAttribute(ElementPointer, "SRC")
+                                Link = htmlParse.ElementAttribute(ElementPointer, "SRC")
                                 'UPGRADE_WARNING: Couldn't resolve default property of object IsLinkToThisHost(cp,SourceHost, Link). Click for more: 'ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?keyword="6A50421D-15FE-4896-8A1B-2EC21E9037B2"'
                                 If IsLinkToThisHost(cp, SourceHost, Link) Then
 
@@ -890,15 +857,15 @@ Namespace Contensive.addons.themeManager
                                         '
                                         ElementPointer = ElementPointer + 1
                                         'UPGRADE_WARNING: Couldn't resolve default property of object kmaParse.Text. Click for more: 'ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?keyword="6A50421D-15FE-4896-8A1B-2EC21E9037B2"'
-                                        ElementText = ElementText & kmaParse.Text(ElementPointer)
+                                        ElementText = ElementText & htmlParse.Text(ElementPointer)
                                         'UPGRADE_WARNING: Couldn't resolve default property of object kmaParse.IsTag. Click for more: 'ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?keyword="6A50421D-15FE-4896-8A1B-2EC21E9037B2"'
-                                        If kmaParse.IsTag(ElementPointer) Then
+                                        If htmlParse.IsTag(ElementPointer) Then
                                             '
                                             ' Process a tag (should just be </SCRIPT>, but go until it is
                                             '
                                             TagCount = TagCount + 1
                                             'UPGRADE_WARNING: Couldn't resolve default property of object kmaParse.TagName. Click for more: 'ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?keyword="6A50421D-15FE-4896-8A1B-2EC21E9037B2"'
-                                            TagDone = (kmaParse.TagName(ElementPointer) = "/" & TagName)
+                                            TagDone = (htmlParse.TagName(ElementPointer) = "/" & TagName)
                                         End If
                                     Loop
                                 End If
@@ -914,13 +881,13 @@ Namespace Contensive.addons.themeManager
                                     '
                                     ' Process the next segment
                                     '
-                                    ElementText = kmaParse.Text(ElementPointer)
-                                    If kmaParse.IsTag(ElementPointer) Then
+                                    ElementText = htmlParse.Text(ElementPointer)
+                                    If htmlParse.IsTag(ElementPointer) Then
                                         '
                                         ' Process a tag (should just be </SCRIPT>, but go until it is
                                         '
                                         TagCount = TagCount + 1
-                                        TagDone = (kmaParse.TagName(ElementPointer) = "/" & TagName)
+                                        TagDone = (htmlParse.TagName(ElementPointer) = "/" & TagName)
                                     End If
                                     StyleTag = StyleTag & ElementText
                                     If Not TagDone Then
@@ -937,9 +904,9 @@ Namespace Contensive.addons.themeManager
                             Case "INPUT"
                                 '
                                 'UPGRADE_WARNING: Couldn't resolve default property of object kmaParse.ElementAttribute. Click for more: 'ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?keyword="6A50421D-15FE-4896-8A1B-2EC21E9037B2"'
-                                If UCase(kmaParse.ElementAttribute(ElementPointer, "TYPE")) = "IMAGE" Then
+                                If UCase(htmlParse.ElementAttribute(ElementPointer, "TYPE")) = "IMAGE" Then
                                     'UPGRADE_WARNING: Couldn't resolve default property of object kmaParse.ElementAttribute. Click for more: 'ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?keyword="6A50421D-15FE-4896-8A1B-2EC21E9037B2"'
-                                    Link = kmaParse.ElementAttribute(ElementPointer, "SRC")
+                                    Link = htmlParse.ElementAttribute(ElementPointer, "SRC")
                                     'UPGRADE_WARNING: Couldn't resolve default property of object IsLinkToThisHost(cp,SourceHost, Link). Click for more: 'ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?keyword="6A50421D-15FE-4896-8A1B-2EC21E9037B2"'
                                     If IsLinkToThisHost(cp, SourceHost, Link) Then
                                         remoteRootRelativeLink = ConvertLinkToRootRelative(cp, Link, BasePath)
@@ -967,10 +934,10 @@ Namespace Contensive.addons.themeManager
                                     '
                                     ' Process the next segment
                                     '
-                                    ElementText = kmaParse.Text(ElementPointer)
-                                    If kmaParse.IsTag(ElementPointer) Then
+                                    ElementText = htmlParse.Text(ElementPointer)
+                                    If htmlParse.IsTag(ElementPointer) Then
                                         TagCount = TagCount + 1
-                                        TagDone = (kmaParse.TagName(ElementPointer) = "/" & TagName)
+                                        TagDone = (htmlParse.TagName(ElementPointer) = "/" & TagName)
                                     End If
                                     If Not TagDone Then
                                         ElementPointer = ElementPointer + 1
@@ -982,7 +949,7 @@ Namespace Contensive.addons.themeManager
                                 ' wysiwyg editor auto deletes empty spans, all a class if there is not one
                                 '
                                 'UPGRADE_WARNING: Couldn't resolve default property of object kmaParse.ElementAttribute. Click for more: 'ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?keyword="6A50421D-15FE-4896-8A1B-2EC21E9037B2"'
-                                If LCase(kmaParse.ElementAttribute(ElementPointer, "class")) = "" Then
+                                If LCase(htmlParse.ElementAttribute(ElementPointer, "class")) = "" Then
                                     ElementText = Replace(ElementText, ">", " class=""emptySpanPlaceHolder"">")
                                 End If
                             Case Else
@@ -990,7 +957,7 @@ Namespace Contensive.addons.themeManager
                                     OtherHeadTags = OtherHeadTags & vbCrLf & ElementText
                                 End If
                         End Select
-                        inlineStyle = kmaParse.ElementAttribute(ElementPointer, "style")
+                        inlineStyle = htmlParse.ElementAttribute(ElementPointer, "style")
                         If inlineStyle <> "" Then
                             inlineStyleNew = ConvertStyles_HandleFileReferences(cp, inlineStyle, BasePath, SourceHost, "", TemplateID, tempPath)
                             If inlineStyle = inlineStyleNew Then
@@ -1010,9 +977,9 @@ Namespace Contensive.addons.themeManager
                 '
                 cs.Open("Page Templates", "id=" & cp.Db.EncodeSQLNumber(TemplateID))
                 If cs.OK Then
-                    If importMethod = importMethodToRecord Then
+                    If importMethod = importMethodIdToRecord Then
                         Call cs.SetField("bodyhtml", GetTagInnerHTML(cp, DocConverted, "body", False))
-                    ElseIf importMethod = importMethodToFile Then
+                    ElseIf importMethod = importMethodIdToFile Then
                         Call cs.SetField("bodyhtml", "{% import """ & templateFilename & """ %}")
                         Call cp.File.Save(cp.Site.PhysicalWWWPath & templateFilename, DocConverted)
                     End If
@@ -1029,7 +996,7 @@ Namespace Contensive.addons.themeManager
                 Call cs.Close()
                 Call cp.Cache.Clear("page templates")
                 returnVal = DocConverted
-                kmaParse = Nothing
+                htmlParse = Nothing
             Catch ex As Exception
                 Call HandleClassError(cp, ex, "ImportTemplate_Convert", "trap, hint=" & hint)
             End Try
@@ -1537,6 +1504,7 @@ Namespace Contensive.addons.themeManager
         ' returns true of the link is a valid link on the source host
         '
         Public Function IsLinkToThisHost(ByVal cp As CPBaseClass, ByRef Host As String, ByRef Link As String) As Boolean
+            Dim returnValue As Boolean = False
             Try
                 '
                 Dim LinkHost As String
@@ -1546,7 +1514,7 @@ Namespace Contensive.addons.themeManager
                     '
                     ' Blank is not a link
                     '
-                    IsLinkToThisHost = False
+                    returnValue = False
                 ElseIf InStr(1, Link, "://") <> 0 Then
                     '
                     ' includes protocol, may be link to another site
@@ -1559,8 +1527,8 @@ Namespace Contensive.addons.themeManager
                         If Pos > 0 Then
                             LinkHost = Mid(LinkHost, 1, Pos - 1)
                         End If
-                        IsLinkToThisHost = (LCase(Host) = LinkHost)
-                        If Not IsLinkToThisHost Then
+                        returnValue = (LCase(Host) = LinkHost)
+                        If Not returnValue Then
                             '
                             ' try combinations including/excluding www.
                             '
@@ -1569,13 +1537,13 @@ Namespace Contensive.addons.themeManager
                                 ' remove it
                                 '
                                 LinkHost = Replace(LinkHost, "www.", "", 1, -1, CompareMethod.Text)
-                                IsLinkToThisHost = (LCase(Host) = LinkHost)
+                                returnValue = (LCase(Host) = LinkHost)
                             Else
                                 '
                                 ' add it
                                 '
                                 LinkHost = Replace(LinkHost, "://", "://www.", 1, -1, CompareMethod.Text)
-                                IsLinkToThisHost = (LCase(Host) = LinkHost)
+                                returnValue = (LCase(Host) = LinkHost)
                             End If
                         End If
                     End If
@@ -1583,19 +1551,20 @@ Namespace Contensive.addons.themeManager
                     '
                     ' Is a bookmark, not a link
                     '
-                    IsLinkToThisHost = False
+                    returnValue = False
                 Else
                     '
                     ' all others are links on the source
                     '
-                    IsLinkToThisHost = True
+                    returnValue = True
                 End If
-                If Not IsLinkToThisHost Then
+                If Not returnValue Then
                     Link = Link
                 End If
             Catch ex As Exception
                 HandleClassError(cp, ex, "IsLinkToThisHost", "trap")
             End Try
+            Return returnValue
         End Function
         '
         '========================================================================================================

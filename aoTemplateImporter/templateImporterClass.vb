@@ -378,7 +378,7 @@ Namespace Contensive.addons
                 Dim inlineStyleNew As String
                 '
                 'Dim Output As FastString.FastStringClass = New FastString.FastStringClass
-                Dim out As String
+                Dim out As String = ""
                 Dim kmaParse As kmaHTML.ParseClass = New kmaHTML.ParseClass
                 Dim webClient As System.Net.WebClient = New System.Net.WebClient()
                 Dim cs As CPCSBaseClass = cp.CSNew
@@ -1319,6 +1319,7 @@ Namespace Contensive.addons
                 Dim LinkHost As String
                 Dim Pos As Integer
                 '
+                IsLinkToThisHost = False
                 If Trim(Link) = "" Then
                     '
                     ' Blank is not a link
