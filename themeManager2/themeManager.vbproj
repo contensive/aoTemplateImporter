@@ -70,6 +70,7 @@
     </Reference>
     <Reference Include="CPBase">
       <HintPath>..\..\Release\CPBase.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\..\Release\3rdParty\JSON.net\Json45r10\Net35\Newtonsoft.Json.dll</HintPath>

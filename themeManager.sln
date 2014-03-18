@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "themeManagerOld", "aoTemplateImporter\themeManagerOld.vbproj", "{F1447CEB-282E-4CA0-8371-E806D4024AC9}"
+Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "templateImporterOld", "aoTemplateImporter\templateImporterOld.vbproj", "{F1447CEB-282E-4CA0-8371-E806D4024AC9}"
 EndProject
 Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "themeManager", "themeManager2\themeManager.vbproj", "{E09A2371-179B-47B1-8FC0-7062F8701C70}"
 EndProject
