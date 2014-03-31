@@ -13,7 +13,7 @@ Namespace Contensive.addons.themeManager
             '
             Try
                 Dim adminAccountDetails As New managerSampleADetailsClass
-                Dim accountList As New managerSampleAListClass
+                Dim accountList As New managerMacroListClass
                 Dim orgList As New ManagerQuickImportClass
                 Dim srcFormId As Integer = CP.Utils.EncodeInteger(CP.Doc.GetProperty(rnSrcFormId))
                 Dim dstFormId As Integer = CP.Utils.EncodeInteger(CP.Doc.GetProperty(rnDstFormId))
@@ -24,12 +24,12 @@ Namespace Contensive.addons.themeManager
                 '
                 If (srcFormId <> 0) Then
                     Select Case srcFormId
-                        Case formIdSampleAList
+                        Case formIdMacroList
                             '
                             '
                             '
                             dstFormId = accountList.processForm(CP, srcFormId, rqs)
-                        Case formIdSampleADetails
+                        Case formIdMacroDetails
                             '
                             '
                             '
@@ -45,7 +45,7 @@ Namespace Contensive.addons.themeManager
                 ' get form
                 '
                 Select Case dstFormId
-                    Case formIdSampleAList
+                    Case formIdMacroList
                         '
                         '
                         '
@@ -55,7 +55,7 @@ Namespace Contensive.addons.themeManager
                         '
                         '
                         returnHtml = orgList.getForm(CP, dstFormId, rqs, rightNow)
-                    Case formIdSampleADetails
+                    Case formIdMacroDetails
                         '
                         '
                         '

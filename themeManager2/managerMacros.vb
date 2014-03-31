@@ -12,7 +12,7 @@ Namespace Contensive.addons.themeManager
             Dim nextFormId As Integer = srcFormId
             Dim managerSampleADetails As New managerSampleADetailsClass
             Dim managerSampleAContentList As New managerSampleADetailListClass
-            Dim managerSampleAList As New managerSampleAListClass
+            Dim managerSampleAList As New managerMacroListClass
             '
             Try
                 '
@@ -20,17 +20,17 @@ Namespace Contensive.addons.themeManager
                 '
                 If (srcFormId <> 0) Then
                     Select Case srcFormId
-                        Case formIdSampleAList
+                        Case formIdMacroList
                             '
                             '
                             '
                             nextFormId = managerSampleAList.processForm(cp, srcFormId, rqs)
-                        Case formIdSampleADetailList
+                        Case formIdMacroDetailList
                             '
                             '
                             '
                             nextFormId = managerSampleAContentList.processForm(cp, srcFormId, rqs)
-                        Case formIdSampleADetails
+                        Case formIdMacroDetails
                             '
                             ' account details
                             '
@@ -51,18 +51,18 @@ Namespace Contensive.addons.themeManager
             Dim button As String = CP.Doc.GetProperty(rnButton)
             Dim managerSampleADetails As New managerSampleADetailsClass
             Dim managerSampleADetailList As New managerSampleADetailListClass
-            Dim managerSampleAList As New managerSampleAListClass
+            Dim managerMacroList As New managerMacroListClass
             Dim userId As Integer
             Dim rqsTabs As String
             Dim tabList As String = ""
             Dim tabbedContent As New adminFramework.contentWithTabsClass
             '
             Try
-                If (dstFormId = formIdSampleAList) Or (dstFormId = 0) Then
+                If (dstFormId = formIdMacroList) Or (dstFormId = 0) Then
                     '
                     ' account list form
                     '
-                    body = managerSampleAList.getForm(CP, dstFormId, rqs)
+                    body = managerMacroList.getForm(CP, dstFormId, rqs)
                 Else
                     '
                     userId = CP.Utils.EncodeInteger(CP.Doc.GetProperty(rnUserId))
@@ -71,11 +71,11 @@ Namespace Contensive.addons.themeManager
                     '
                     tabbedContent.addTab()
                     tabbedContent.tabCaption = "Details"
-                    tabbedContent.tabLink = "?" & CP.Utils.ModifyQueryString(rqsTabs, rnDstFormId, formIdSampleADetails)
+                    tabbedContent.tabLink = "?" & CP.Utils.ModifyQueryString(rqsTabs, rnDstFormId, formIdMacroDetails)
                     '
                     tabbedContent.addTab()
                     tabbedContent.tabCaption = "Detail List"
-                    tabbedContent.tabLink = "?" & CP.Utils.ModifyQueryString(rqsTabs, rnDstFormId, formIdSampleADetailList)
+                    tabbedContent.tabLink = "?" & CP.Utils.ModifyQueryString(rqsTabs, rnDstFormId, formIdMacroDetailList)
                     '
                     ' get form
                     '
@@ -83,13 +83,13 @@ Namespace Contensive.addons.themeManager
                     rqs = CP.Utils.ModifyQueryString(rqs, rnDstFormId, dstFormId)
                     '
                     Select Case dstFormId
-                        Case formIdSampleADetails
+                        Case formIdMacroDetails
                             '
                             ' Account Details
                             '
                             tabbedContent.setActiveTab("Details")
                             tabbedContent.body = managerSampleADetails.getForm(CP, dstFormId, rqs, rightNow)
-                        Case formIdSampleADetailList
+                        Case formIdMacroDetailList
                             '
                             '
                             '

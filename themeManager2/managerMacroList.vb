@@ -3,7 +3,7 @@ Imports adminFramework
 
 Namespace Contensive.addons.themeManager
     '
-    Public Class managerSampleAListClass
+    Public Class managerMacroListClass
         '
         '
         '
@@ -11,10 +11,19 @@ Namespace Contensive.addons.themeManager
             '
             Dim nextFormId As Integer = 0
             Try
+                Dim button = cp.Doc.GetText("button")
+                If button <> "" Then
+                    Select Case button
+                        Case buttonAdd
+                            '
+                            ' add button should be handled by ajax
+                            '
+                    End Select
+                End If
                 '
                 ' process ajax buttons and return to list
                 '
-                nextFormId = formIdSampleAList
+                nextFormId = formIdMacroList
             Catch ex As Exception
                 '
                 '
@@ -51,58 +60,40 @@ Namespace Contensive.addons.themeManager
             '
             Try
                 report = New reportListClass(cp)
-                report.title = "User List (managerSampleAListClass)"
+                report.title = "Import Macros"
                 '
                 report.columnCaption = "row"
-                report.columnCaptionClass = ""
-                report.columnCellClass = ""
+                report.columnCaptionClass = afwStyles.afwTextAlignRight & " " & afwStyles.afwWidth50px
+                report.columnCellClass = afwStyles.afwTextAlignRight
                 '
                 report.addColumn()
                 report.columnCaption = "ID"
-                report.columnCaptionClass = ""
-                report.columnCellClass = ""
+                report.columnCaptionClass = afwStyles.afwTextAlignRight & " " & afwStyles.afwWidth50px
+                report.columnCellClass = afwStyles.afwTextAlignRight
+                '
+                report.addColumn()
+                report.columnCaption = "Execute"
+                report.columnCaptionClass = afwStyles.afwTextAlignCenter & " " & afwStyles.afwWidth100px
+                report.columnCellClass = afwStyles.afwTextAlignCenter
                 '
                 report.addColumn()
                 report.columnCaption = "Name"
-                report.columnCaptionClass = ""
-                report.columnCellClass = ""
+                report.columnCaptionClass = afwStyles.afwTextAlignLeft
+                report.columnCellClass = afwStyles.afwTextAlignLeft
                 '
-                report.addColumn()
-                report.columnCaption = "First Name"
-                report.columnCaptionClass = ""
-                report.columnCellClass = ""
-                '
-                report.addColumn()
-                report.columnCaption = "Last Name"
-                report.columnCaptionClass = ""
-                report.columnCellClass = ""
-                '
-                report.addColumn()
-                report.columnCaption = "Email"
-                report.columnCaptionClass = ""
-                report.columnCellClass = ""
-                '
-                report.addColumn()
-                report.columnCaption = "Phone"
-                report.columnCaptionClass = ""
-                report.columnCellClass = ""
-                '
-                cs.Open("people", , , , , 50, 1)
+                cs.Open("Theme Import Macros", , , , , 50, 1)
                 Do While cs.OK()
                     userId = cs.GetInteger("Id")
                     qs = rqs
-                    qs = cp.Utils.ModifyQueryString(qs, rnDstFormId, formIdSampleADetails)
+                    qs = cp.Utils.ModifyQueryString(qs, rnDstFormId, formIdMacroDetails)
                     qs = cp.Utils.ModifyQueryString(qs, rnUserId, userId)
                     nameLink = "<a href=""?" & qs & """>" & cs.GetText("name") & "</a>"
                     '
                     report.addRow()
                     report.setCell(rowPtr + 1)
                     report.setCell(userId.ToString)
+                    report.setCell("<a class=""afwButton"" id=""asdf"">execute</a>")
                     report.setCell(nameLink)
-                    report.setCell(cs.GetText("firstname"))
-                    report.setCell(cs.GetText("lastname"))
-                    report.setCell(cs.GetText("email"))
-                    report.setCell(cs.GetText("phone"))
                     rowPtr += 1
                     cs.GoNext()
                 Loop
@@ -112,14 +103,18 @@ Namespace Contensive.addons.themeManager
                 report.htmlLeftOfTable = "" _
                     & cr & "<div class=""mmFilterTitle"">filters</div>" _
                     & ""
+                '
+                ' add button
+                '
+                Call report.addFormButton(buttonAdd, "button", "tmAddButton")
                 adminUrl = cp.Site.GetProperty("adminUrl") _
                     & "?af=4" _
                     & "&id=0" _
-                    & "&cid=" & cp.Content.GetID("people") & "" _
+                    & "&cid=" & cp.Content.GetID("theme import macros") & "" _
                     & ""
                 js = "" _
                     & cr & "jQuery(document).ready(function(){" _
-                    & cr2 & "jQuery('#abAddButton').click(function(){" _
+                    & cr2 & "jQuery('#tmAddButton').click(function(){" _
                     & cr2 & "window.location='" & adminUrl & "';" _
                     & cr2 & "return false;" _
                     & cr2 & "});" _

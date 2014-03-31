@@ -27,7 +27,7 @@ Namespace Contensive.addons.themeManager
                 '
                 If (srcFormId <> 0) Then
                     Select Case srcFormId
-                        Case formIdSampleAMin To formIdSampleAMax
+                        Case formIdMacroMin To formIdMacroMax
                             '
                             '
                             '
@@ -43,7 +43,7 @@ Namespace Contensive.addons.themeManager
                 ' get form
                 '
                 manager.navCaption = "Macros"
-                manager.navLink = "?" & CP.Utils.ModifyQueryString(rqs, rnDstFormId, formIdSampleAList)
+                manager.navLink = "?" & CP.Utils.ModifyQueryString(rqs, rnDstFormId, formIdMacroList)
                 '
                 manager.addNav()
                 manager.navCaption = "Quick Import"
@@ -58,7 +58,7 @@ Namespace Contensive.addons.themeManager
                         body = ManagerQuickImport.getForm(CP, dstFormId, rqs, rightNow)
                         body = CP.Html.div(body, , , "themeManagerQuickImport")
                         manager.body = body
-                    Case formIdSampleAList
+                    Case formIdMacroList
                         '
                         ' default is account list
                         '

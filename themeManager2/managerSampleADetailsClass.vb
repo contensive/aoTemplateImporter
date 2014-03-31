@@ -30,9 +30,9 @@ Namespace Contensive.addons.themeManager
                     Call cs.Close()
                 End If
                 If button = buttonCancel Or button = buttonOK Then
-                    returnNextFormId = formIdSampleAList
+                    returnNextFormId = formIdMacroList
                 Else
-                    returnNextFormId = formIdSampleADetails
+                    returnNextFormId = formIdMacroDetails
                 End If
             Catch ex As Exception
                 '

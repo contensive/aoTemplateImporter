@@ -90,10 +90,10 @@
   <ItemGroup>
     <Compile Include="ajaxJsonClass.vb" />
     <Compile Include="managerSampleADetailListClass.vb" />
-    <Compile Include="managerMacrosClass.vb" />
+    <Compile Include="managerMacros.vb" />
     <Compile Include="managerClass.vb" />
     <Compile Include="managerSampleADetailsClass.vb" />
-    <Compile Include="managerSampleAListClass.vb" />
+    <Compile Include="managerMacroList.vb" />
     <Compile Include="managerSampleBClass.vb" />
     <Compile Include="ajaxHtmlClass.vb" />
     <Compile Include="commonModule.vb" />
@@ -112,7 +112,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="managerQuickImportClass.vb" />
+    <Compile Include="managerQuickImport.vb" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="My Project\Resources.resx">

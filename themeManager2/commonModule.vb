@@ -25,11 +25,11 @@ Namespace Contensive.addons.themeManager
         '
         ' typeA Forms
         '
-        Public Const formIdSampleAMin As Integer = 110
-        Public Const formIdSampleAList As Integer = 110
-        Public Const formIdSampleADetails As Integer = 121
-        Public Const formIdSampleADetailList As Integer = 122
-        Public Const formIdSampleAMax As Integer = 129
+        Public Const formIdMacroMin As Integer = 110
+        Public Const formIdMacroList As Integer = 110
+        Public Const formIdMacroDetails As Integer = 121
+        Public Const formIdMacroDetailList As Integer = 122
+        Public Const formIdMacroMax As Integer = 129
         '
         '
         ' typeB Forms

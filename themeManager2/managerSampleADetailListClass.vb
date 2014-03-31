@@ -21,7 +21,7 @@ Namespace Contensive.addons.themeManager
                     '
                 End If
                 If button = buttonCancel Or button = buttonOK Then
-                    nextFormId = formIdSampleAList
+                    nextFormId = formIdMacroList
                 Else
                     nextFormId = srcFormId
                 End If
