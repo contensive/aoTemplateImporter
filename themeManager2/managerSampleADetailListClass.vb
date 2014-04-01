@@ -7,7 +7,7 @@ Namespace Contensive.addons.themeManager
         '
         '
         '
-        Friend Function processForm(ByVal cp As CPBaseClass, ByVal srcFormId As Integer, ByVal rqs As String) As Integer
+        Friend Function processForm(ByVal cp As CPBaseClass, ByVal srcFormId As Integer, ByVal rqs As String, ByVal rightNow As Date) As Integer
             Dim nextFormId As Integer = srcFormId
             Dim cs As CPCSBaseClass = cp.CSNew
             Dim body As CPBlockBaseClass = cp.BlockNew

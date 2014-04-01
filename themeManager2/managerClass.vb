@@ -11,8 +11,9 @@ Namespace Contensive.addons.themeManager
             '
             Try
                 Dim body As String = ""
-                Dim managerMacros As New managerMacrosClass
+                Dim managerMacroList As New managerMacroListClass
                 Dim ManagerQuickImport As New ManagerQuickImportClass
+                Dim managerMacroExecute As New managerMacroExecuteClass
                 Dim rqs As String = CP.Doc.RefreshQueryString
                 Call CP.Doc.AddHeadJavascript("var themeManagerFrameRqs='" & CP.Utils.EncodeJavascript(rqs) & "';")
                 Dim home As New adminFramework.formSimpleClass
@@ -27,16 +28,21 @@ Namespace Contensive.addons.themeManager
                 '
                 If (srcFormId <> 0) Then
                     Select Case srcFormId
-                        Case formIdMacroMin To formIdMacroMax
+                        Case formIdMacroList
                             '
                             '
                             '
-                            dstFormId = managerMacros.processForm(CP, srcFormId, rqs, rightNow)
-                        Case formIdToolsMin To formIdToolsMax
+                            dstFormId = managerMacroList.processForm(CP, srcFormId, rqs, rightNow)
+                        Case formIdToolsQuickImport
                             '
                             '
                             '
                             dstFormId = ManagerQuickImport.processForm(CP, srcFormId, rqs, rightNow)
+                        Case formIdMacroExecute
+                            '
+                            '
+                            '
+                            dstFormId = managerMacroExecute.processForm(CP, srcFormId, rqs, rightNow)
                     End Select
                 End If
                 '
@@ -49,6 +55,8 @@ Namespace Contensive.addons.themeManager
                 manager.navCaption = "Quick Import"
                 manager.navLink = "?" & CP.Utils.ModifyQueryString(rqs, rnDstFormId, formIdToolsQuickImport)
                 '
+                ' later we can integrate the tabbed form - for now, just call the subforms directly
+                '
                 Select Case dstFormId
                     Case formIdToolsQuickImport
                         '
@@ -56,14 +64,22 @@ Namespace Contensive.addons.themeManager
                         '
                         manager.setActiveNav("Quick Import")
                         body = ManagerQuickImport.getForm(CP, dstFormId, rqs, rightNow)
-                        body = CP.Html.div(body, , , "themeManagerQuickImport")
+                        body = CP.Html.div(body, , , "themeManagerTools")
                         manager.body = body
                     Case formIdMacroList
                         '
                         ' default is account list
                         '
                         manager.setActiveNav("Macros")
-                        body = managerMacros.getForm(CP, dstFormId, rqs, rightNow)
+                        body = managerMacroList.getForm(CP, dstFormId, rqs, rightNow)
+                        body = CP.Html.div(body, , , "themeManagerMacros")
+                        manager.body = body
+                    Case formIdMacroExecute
+                        '
+                        ' default is account list
+                        '
+                        manager.setActiveNav("Macros")
+                        body = managerMacroList.getForm(CP, dstFormId, rqs, rightNow)
                         body = CP.Html.div(body, , , "themeManagerMacros")
                         manager.body = body
                     Case Else

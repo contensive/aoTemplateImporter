@@ -89,6 +89,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ajaxJsonClass.vb" />
+    <Compile Include="managerMacroExecuteClass.vb" />
     <Compile Include="managerSampleADetailListClass.vb" />
     <Compile Include="managerMacros.vb" />
     <Compile Include="managerClass.vb" />

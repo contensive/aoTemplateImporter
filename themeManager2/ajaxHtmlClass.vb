@@ -2,7 +2,7 @@
 Imports Contensive.BaseClasses
 
 Namespace Contensive.addons.themeManager
-    Public Class ajaxClass
+    Public Class ajaxHtmlClass
         Inherits AddonBaseClass
         '
         ' Ajax Handler - Remote Method
@@ -12,9 +12,8 @@ Namespace Contensive.addons.themeManager
             Dim returnHtml As String = ""
             '
             Try
-                Dim adminAccountDetails As New managerSampleADetailsClass
-                Dim accountList As New managerMacroListClass
-                Dim orgList As New ManagerQuickImportClass
+                Dim macroList As New managerMacroListClass
+                Dim macroExecute As New managerMacroExecuteClass
                 Dim srcFormId As Integer = CP.Utils.EncodeInteger(CP.Doc.GetProperty(rnSrcFormId))
                 Dim dstFormId As Integer = CP.Utils.EncodeInteger(CP.Doc.GetProperty(rnDstFormId))
                 Dim rqs As String = CP.Doc.GetProperty("baseRqs")
@@ -28,17 +27,12 @@ Namespace Contensive.addons.themeManager
                             '
                             '
                             '
-                            dstFormId = accountList.processForm(CP, srcFormId, rqs)
-                        Case formIdMacroDetails
+                            dstFormId = macroList.processForm(CP, srcFormId, rqs, rightNow)
+                        Case formIdMacroExecute
                             '
                             '
                             '
-                            dstFormId = adminAccountDetails.processForm(CP, srcFormId, rqs, rightNow)
-                        Case formIdToolsQuickImport
-                            '
-                            '
-                            '
-                            dstFormId = orgList.processForm(CP, srcFormId, rqs, rightNow)
+                            dstFormId = macroExecute.processForm(CP, srcFormId, rqs, rightNow)
                     End Select
                 End If
                 '
@@ -49,17 +43,12 @@ Namespace Contensive.addons.themeManager
                         '
                         '
                         '
-                        returnHtml = accountList.getForm(CP, dstFormId, rqs)
-                    Case formIdToolsQuickImport
+                        returnHtml = macroList.getForm(CP, dstFormId, rqs, rightNow)
+                    Case formIdMacroExecute
                         '
                         '
                         '
-                        returnHtml = orgList.getForm(CP, dstFormId, rqs, rightNow)
-                    Case formIdMacroDetails
-                        '
-                        '
-                        '
-                        returnHtml = adminAccountDetails.getForm(CP, dstFormId, rqs, rightNow)
+                        returnHtml = macroExecute.getForm(CP, dstFormId, rqs, rightNow)
                 End Select
             Catch ex As Exception
                 CP.Site.ErrorReport(ex, "error in aoManagerTemplate.adminClass.execute")

@@ -24,12 +24,12 @@ Namespace Contensive.addons.themeManager
                             '
                             '
                             '
-                            nextFormId = managerSampleAList.processForm(cp, srcFormId, rqs)
+                            nextFormId = managerSampleAList.processForm(cp, srcFormId, rqs, rightNow)
                         Case formIdMacroDetailList
                             '
                             '
                             '
-                            nextFormId = managerSampleAContentList.processForm(cp, srcFormId, rqs)
+                            nextFormId = managerSampleAContentList.processForm(cp, srcFormId, rqs, rightNow)
                         Case formIdMacroDetails
                             '
                             ' account details
@@ -56,13 +56,14 @@ Namespace Contensive.addons.themeManager
             Dim rqsTabs As String
             Dim tabList As String = ""
             Dim tabbedContent As New adminFramework.contentWithTabsClass
+            Dim macroBody As String = ""
             '
             Try
                 If (dstFormId = formIdMacroList) Or (dstFormId = 0) Then
                     '
                     ' account list form
                     '
-                    body = managerMacroList.getForm(CP, dstFormId, rqs)
+                    body = managerMacroList.getForm(CP, dstFormId, rqs, rightNow)
                 Else
                     '
                     userId = CP.Utils.EncodeInteger(CP.Doc.GetProperty(rnUserId))
@@ -88,14 +89,16 @@ Namespace Contensive.addons.themeManager
                             ' Account Details
                             '
                             tabbedContent.setActiveTab("Details")
-                            tabbedContent.body = managerSampleADetails.getForm(CP, dstFormId, rqs, rightNow)
+                            macroBody = managerSampleADetails.getForm(CP, dstFormId, rqs, rightNow)
                         Case formIdMacroDetailList
                             '
                             '
                             '
                             tabbedContent.setActiveTab("Detail List")
-                            tabbedContent.body = managerSampleADetailList.getForm(CP, dstFormId, rqs, rightNow)
+                            macroBody = managerSampleADetailList.getForm(CP, dstFormId, rqs, rightNow)
                     End Select
+                    macroBody = CP.Html.div(macroBody, "", "", "themeManagerMacroBody")
+                    tabbedContent.body = macroBody
                     tabbedContent.title = "User: " & CP.Content.GetRecordName("people", userId)
                     body = tabbedContent.getHtml(CP)
                 End If

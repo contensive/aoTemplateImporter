@@ -6,18 +6,25 @@ Namespace Contensive.addons.themeManager
     Public Class managerMacroListClass
         '
         '
+        Private progressMessage As String = ""
         '
-        Friend Function processForm(ByVal cp As CPBaseClass, ByVal srcFormId As Integer, ByVal rqs As String) As Integer
+        Friend Function processForm(ByVal cp As CPBaseClass, ByVal srcFormId As Integer, ByVal rqs As String, ByVal rightNow As Date) As Integer
             '
             Dim nextFormId As Integer = 0
             Try
-                Dim button = cp.Doc.GetText("button")
+                Dim button As String = cp.Doc.GetText("button")
+                Dim macroId As Integer = cp.Doc.GetInteger("macroId")
                 If button <> "" Then
                     Select Case button
-                        Case buttonAdd
+                        Case "execute"
                             '
-                            ' add button should be handled by ajax
+                            ' execute
                             '
+                            If Not executeMacro(cp, macroId, progressMessage) Then
+                                '
+                                '
+                                '
+                            End If
                     End Select
                 End If
                 '
@@ -35,7 +42,7 @@ Namespace Contensive.addons.themeManager
         '
         '
         '
-        Friend Function getForm(ByVal cp As CPBaseClass, ByVal dstFormId As Integer, ByVal rqs As String) As String
+        Friend Function getForm(ByVal cp As CPBaseClass, ByVal dstFormId As Integer, ByVal rqs As String, ByVal rightNow As Date) As String
             Dim block As CPBlockBaseClass = cp.BlockNew()
             Dim body As CPBlockBaseClass = cp.BlockNew()
             Dim row As CPBlockBaseClass = cp.BlockNew()
@@ -45,7 +52,7 @@ Namespace Contensive.addons.themeManager
             Dim rowPtr As Integer = 0
             Dim nameLink As String = ""
             Dim qs As String = ""
-            Dim userId As Integer
+            Dim macroId As Integer
             Dim report As reportListClass
             Dim s As String = ""
             Dim adminUrl As String = ""
@@ -54,13 +61,15 @@ Namespace Contensive.addons.themeManager
             Dim dateExpirationText As String = ""
             Dim accountListMembershipStatusId As Integer
             Dim val As String
-            Dim rightNow As Date = Now()
             Dim rightNowDate As Date = rightNow.Date
             Dim rightNowDateSql As String = cp.Db.EncodeSQLDate(rightNowDate)
             '
             Try
                 report = New reportListClass(cp)
                 report.title = "Import Macros"
+                If progressMessage <> "" Then
+                    report.description = "<div style=""padding:20px; border: 1px dotted #444;background-color:#f8f8f8;"">" & progressMessage & "</div>"
+                End If
                 '
                 report.columnCaption = "row"
                 report.columnCaptionClass = afwStyles.afwTextAlignRight & " " & afwStyles.afwWidth50px
@@ -83,16 +92,16 @@ Namespace Contensive.addons.themeManager
                 '
                 cs.Open("Theme Import Macros", , , , , 50, 1)
                 Do While cs.OK()
-                    userId = cs.GetInteger("Id")
+                    macroId = cs.GetInteger("Id")
                     qs = rqs
                     qs = cp.Utils.ModifyQueryString(qs, rnDstFormId, formIdMacroDetails)
-                    qs = cp.Utils.ModifyQueryString(qs, rnUserId, userId)
+                    qs = cp.Utils.ModifyQueryString(qs, rnUserId, macroId)
                     nameLink = "<a href=""?" & qs & """>" & cs.GetText("name") & "</a>"
                     '
                     report.addRow()
                     report.setCell(rowPtr + 1)
-                    report.setCell(userId.ToString)
-                    report.setCell("<a class=""afwButton"" id=""asdf"">execute</a>")
+                    report.setCell(macroId.ToString)
+                    report.setCell("<a class=""afwButton executeMacro"" macroId=""" & macroId.ToString() & """>execute</a>")
                     report.setCell(nameLink)
                     rowPtr += 1
                     cs.GoNext()
