@@ -199,6 +199,7 @@ Namespace Contensive.addons.themeManager
                 Dim regPtr As Integer
                 Dim regValue As String = ""
                 '
+                return_progressMessage = ""
                 If cs.Open("theme import macros", "id=" & macroId) Then
 
                 End If
@@ -214,6 +215,7 @@ Namespace Contensive.addons.themeManager
                                 '
                                 '
                                 '
+                                return_progressMessage &= "<br>Get Layout, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
                                     regPtr = getRegPtr(regCnt, registerNames, dst)
                                     If regPtr >= 0 Then
@@ -229,6 +231,7 @@ Namespace Contensive.addons.themeManager
                                 '
                                 '
                                 '
+                                return_progressMessage &= "<br>Get www File, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
                                     regPtr = getRegPtr(regCnt, registerNames, dst)
                                     If regPtr >= 0 Then
@@ -245,6 +248,7 @@ Namespace Contensive.addons.themeManager
                                 '
                                 '
                                 '
+                                return_progressMessage &= "<br>Set Template, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
                                     regPtr = getRegPtr(regCnt, registerNames, src)
                                     If regPtr >= 0 Then
@@ -268,6 +272,7 @@ Namespace Contensive.addons.themeManager
                                 '
                                 '
                                 '
+                                return_progressMessage &= "<br>Get Template Head, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
                                     regPtr = getRegPtr(regCnt, registerNames, src)
                                     If regPtr >= 0 Then
