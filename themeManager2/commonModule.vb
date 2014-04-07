@@ -21,8 +21,9 @@ Namespace Contensive.addons.themeManager
             Public Const setlayout As Integer = 8
             Public Const setWwwFile As Integer = 9
             Public Const setContentFile As Integer = 10
-            Public Const setTemplate As Integer = 11
+            Public Const setTemplateBody As Integer = 11
             Public Const setTemplateHead As Integer = 12
+            Public Const setTemplateBodyTag As Integer = 13
         End Structure
         '
         Public Const buttonOK As String = " OK "
@@ -211,6 +212,40 @@ Namespace Contensive.addons.themeManager
                         dst = cs.GetText("destination")
                         selector = cs.GetText("selector")
                         Select Case cs.GetInteger("instructionId")
+                            Case themeImportMacroInstructions.setOuter
+                                '
+                                '
+                                '
+                                return_progressMessage &= "<br>Set Outer, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
+                                If (src <> "") And (dst <> "") Then
+                                    regPtr = getRegPtr(regCnt, registerNames, dst)
+                                    If regPtr >= 0 Then
+                                        regValue = registerValues(regPtr)
+                                        If selector <> "" Then
+                                            Call blockWork.Load(regValue)
+                                            blockWork.SetOuter(selector, src)
+                                            regValue = blockWork.GetHtml()
+                                        End If
+                                        registerValues(regPtr) = regValue
+                                    End If
+                                End If
+                            Case themeImportMacroInstructions.setInner
+                                '
+                                '
+                                '
+                                return_progressMessage &= "<br>Set Inner, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
+                                If (src <> "") And (dst <> "") Then
+                                    regPtr = getRegPtr(regCnt, registerNames, dst)
+                                    If regPtr >= 0 Then
+                                        regValue = registerValues(regPtr)
+                                        If selector <> "" Then
+                                            Call blockWork.Load(regValue)
+                                            blockWork.SetInner(selector, src)
+                                            regValue = blockWork.GetHtml()
+                                        End If
+                                        registerValues(regPtr) = regValue
+                                    End If
+                                End If
                             Case themeImportMacroInstructions.getLayout
                                 '
                                 '
@@ -244,7 +279,7 @@ Namespace Contensive.addons.themeManager
                                         registerValues(regPtr) = regValue
                                     End If
                                 End If
-                            Case themeImportMacroInstructions.setTemplate
+                            Case themeImportMacroInstructions.setTemplateBody
                                 '
                                 '
                                 '
@@ -305,6 +340,7 @@ Namespace Contensive.addons.themeManager
                     Loop While cs.OK()
                 End If
                 Call cs.Close()
+                Call cp.Cache.ClearAll()
                 '
                 return_progressMessage &= "<br>Execute Completed Successfully."
             Catch ex As Exception
