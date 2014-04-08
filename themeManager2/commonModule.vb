@@ -198,6 +198,8 @@ Namespace Contensive.addons.themeManager
                 Dim regName As String = ""
                 Dim regCnt As Integer = 0
                 Dim regPtr As Integer
+                Dim srcRegPtr As Integer = 0
+                Dim dstRegPtr As Integer = 0
                 Dim regValue As String = ""
                 '
                 return_progressMessage = ""
@@ -206,12 +208,46 @@ Namespace Contensive.addons.themeManager
                 End If
                 Call cs.Close()
                 '
-                If cs.Open("theme import macro lines", "themeImportMacroId=" & macroId, "sortorder,id") Then
+                If cs.Open("theme import macro lines", "themeImportMacroId=" & macroId, "sortorder,id", , , 999) Then
                     Do
                         src = cs.GetText("source")
                         dst = cs.GetText("destination")
                         selector = cs.GetText("selector")
                         Select Case cs.GetInteger("instructionId")
+                            Case themeImportMacroInstructions.getInner
+                                '
+                                '
+                                '
+                                return_progressMessage &= "<br>Get Inner, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
+                                If (src <> "") And (dst <> "") Then
+                                    dstRegPtr = getRegPtr(regCnt, registerNames, dst)
+                                    If dstRegPtr >= 0 Then
+                                        srcRegPtr = getRegPtr(regCnt, registerNames, src)
+                                        If srcRegPtr >= 0 Then
+                                            regValue = registerValues(srcRegPtr)
+                                            blockWork.Load(regValue)
+                                            regValue = blockWork.GetInner(selector)
+                                            registerValues(regPtr) = regValue
+                                        End If
+                                    End If
+                                End If
+                            Case themeImportMacroInstructions.getOuter
+                                '
+                                '
+                                '
+                                return_progressMessage &= "<br>Get Outer, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
+                                If (src <> "") And (dst <> "") Then
+                                    dstRegPtr = getRegPtr(regCnt, registerNames, dst)
+                                    If dstRegPtr >= 0 Then
+                                        srcRegPtr = getRegPtr(regCnt, registerNames, src)
+                                        If srcRegPtr >= 0 Then
+                                            regValue = registerValues(srcRegPtr)
+                                            blockWork.Load(regValue)
+                                            regValue = blockWork.GetOuter(selector)
+                                            registerValues(regPtr) = regValue
+                                        End If
+                                    End If
+                                End If
                             Case themeImportMacroInstructions.setOuter
                                 '
                                 '
