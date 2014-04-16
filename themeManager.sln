@@ -23,4 +23,8 @@ Global
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		BuildVersion_UseGlobalSettings = True
+		BuildVersion_AssemblyInfoFilename = themeManager2\My Project\AssemblyInfo.vb
+	EndGlobalSection
 EndGlobal
