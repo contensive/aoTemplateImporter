@@ -200,7 +200,8 @@ Namespace Contensive.addons.themeManager
                 Dim regPtr As Integer
                 Dim srcRegPtr As Integer = 0
                 Dim dstRegPtr As Integer = 0
-                Dim regValue As String = ""
+                Dim srcValue As String = ""
+                Dim dstValue As String = ""
                 '
                 return_progressMessage = ""
                 If cs.Open("theme import macros", "id=" & macroId) Then
@@ -220,15 +221,23 @@ Namespace Contensive.addons.themeManager
                                 '
                                 return_progressMessage &= "<br>Get Inner, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
-                                    dstRegPtr = getRegPtr(regCnt, registerNames, dst)
+                                    dstRegPtr = getRegPtr(regCnt, registerNames, dst, True)
                                     If dstRegPtr >= 0 Then
-                                        srcRegPtr = getRegPtr(regCnt, registerNames, src)
+                                        srcRegPtr = getRegPtr(regCnt, registerNames, src, False)
                                         If srcRegPtr >= 0 Then
-                                            regValue = registerValues(srcRegPtr)
-                                            blockWork.Load(regValue)
-                                            regValue = blockWork.GetInner(selector)
-                                            registerValues(regPtr) = regValue
+                                            '
+                                            ' src is a register
+                                            '
+                                            srcValue = registerValues(srcRegPtr)
+                                        Else
+                                            '
+                                            ' src is literal
+                                            '
+                                            srcValue = src
                                         End If
+                                        blockWork.Load(srcValue)
+                                        srcValue = blockWork.GetInner(selector)
+                                        registerValues(dstRegPtr) = srcValue
                                     End If
                                 End If
                             Case themeImportMacroInstructions.getOuter
@@ -237,15 +246,23 @@ Namespace Contensive.addons.themeManager
                                 '
                                 return_progressMessage &= "<br>Get Outer, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
-                                    dstRegPtr = getRegPtr(regCnt, registerNames, dst)
+                                    dstRegPtr = getRegPtr(regCnt, registerNames, dst, True)
                                     If dstRegPtr >= 0 Then
-                                        srcRegPtr = getRegPtr(regCnt, registerNames, src)
+                                        srcRegPtr = getRegPtr(regCnt, registerNames, src, False)
                                         If srcRegPtr >= 0 Then
-                                            regValue = registerValues(srcRegPtr)
-                                            blockWork.Load(regValue)
-                                            regValue = blockWork.GetOuter(selector)
-                                            registerValues(regPtr) = regValue
+                                            '
+                                            ' src is a register
+                                            '
+                                            srcValue = registerValues(srcRegPtr)
+                                        Else
+                                            '
+                                            ' src is literal
+                                            '
+                                            srcValue = src
                                         End If
+                                        blockWork.Load(srcValue)
+                                        srcValue = blockWork.GetOuter(selector)
+                                        registerValues(dstRegPtr) = srcValue
                                     End If
                                 End If
                             Case themeImportMacroInstructions.setOuter
@@ -254,15 +271,25 @@ Namespace Contensive.addons.themeManager
                                 '
                                 return_progressMessage &= "<br>Set Outer, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
-                                    regPtr = getRegPtr(regCnt, registerNames, dst)
-                                    If regPtr >= 0 Then
-                                        regValue = registerValues(regPtr)
-                                        If selector <> "" Then
-                                            Call blockWork.Load(regValue)
-                                            blockWork.SetOuter(selector, src)
-                                            regValue = blockWork.GetHtml()
+                                    dstRegPtr = getRegPtr(regCnt, registerNames, dst, True)
+                                    If dstRegPtr >= 0 Then
+                                        srcRegPtr = getRegPtr(regCnt, registerNames, src, False)
+                                        If srcRegPtr >= 0 Then
+                                            '
+                                            ' src is a register
+                                            '
+                                            srcValue = registerValues(srcRegPtr)
+                                        Else
+                                            '
+                                            ' src is literal
+                                            '
+                                            srcValue = src
                                         End If
-                                        registerValues(regPtr) = regValue
+                                        dstValue = registerValues(dstRegPtr)
+                                        blockWork.Load(dstValue)
+                                        Call blockWork.SetOuter(selector, srcValue)
+                                        dstValue = blockWork.GetHtml()
+                                        registerValues(dstRegPtr) = dstValue
                                     End If
                                 End If
                             Case themeImportMacroInstructions.setInner
@@ -271,15 +298,25 @@ Namespace Contensive.addons.themeManager
                                 '
                                 return_progressMessage &= "<br>Set Inner, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
-                                    regPtr = getRegPtr(regCnt, registerNames, dst)
-                                    If regPtr >= 0 Then
-                                        regValue = registerValues(regPtr)
-                                        If selector <> "" Then
-                                            Call blockWork.Load(regValue)
-                                            blockWork.SetInner(selector, src)
-                                            regValue = blockWork.GetHtml()
+                                    dstRegPtr = getRegPtr(regCnt, registerNames, dst, True)
+                                    If dstRegPtr >= 0 Then
+                                        srcRegPtr = getRegPtr(regCnt, registerNames, src, False)
+                                        If srcRegPtr >= 0 Then
+                                            '
+                                            ' src is a register
+                                            '
+                                            srcValue = registerValues(srcRegPtr)
+                                        Else
+                                            '
+                                            ' src is literal
+                                            '
+                                            srcValue = src
                                         End If
-                                        registerValues(regPtr) = regValue
+                                        dstValue = registerValues(dstRegPtr)
+                                        blockWork.Load(dstValue)
+                                        Call blockWork.SetInner(selector, srcValue)
+                                        dstValue = blockWork.GetHtml()
+                                        registerValues(dstRegPtr) = dstValue
                                     End If
                                 End If
                             Case themeImportMacroInstructions.getLayout
@@ -288,14 +325,14 @@ Namespace Contensive.addons.themeManager
                                 '
                                 return_progressMessage &= "<br>Get Layout, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
-                                    regPtr = getRegPtr(regCnt, registerNames, dst)
+                                    regPtr = getRegPtr(regCnt, registerNames, dst, True)
                                     If regPtr >= 0 Then
-                                        regValue = src
+                                        srcValue = src
                                         If selector <> "" Then
                                             Call blockWork.OpenFile(src)
-                                            regValue = blockWork.GetInner(selector)
+                                            srcValue = blockWork.GetInner(selector)
                                         End If
-                                        registerValues(regPtr) = regValue
+                                        registerValues(regPtr) = srcValue
                                     End If
                                 End If
                             Case themeImportMacroInstructions.getWwwFile
@@ -304,15 +341,15 @@ Namespace Contensive.addons.themeManager
                                 '
                                 return_progressMessage &= "<br>Get www File, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
-                                    regPtr = getRegPtr(regCnt, registerNames, dst)
+                                    regPtr = getRegPtr(regCnt, registerNames, dst, True)
                                     If regPtr >= 0 Then
                                         src = cp.Site.PhysicalWWWPath & src
-                                        regValue = cp.File.Read(src)
+                                        srcValue = cp.File.Read(src)
                                         If selector <> "" Then
                                             Call blockWork.OpenFile(src)
-                                            regValue = blockWork.GetInner(selector)
+                                            srcValue = blockWork.GetInner(selector)
                                         End If
-                                        registerValues(regPtr) = regValue
+                                        registerValues(regPtr) = srcValue
                                     End If
                                 End If
                             Case themeImportMacroInstructions.setTemplateBody
@@ -321,12 +358,12 @@ Namespace Contensive.addons.themeManager
                                 '
                                 return_progressMessage &= "<br>Set Template, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
-                                    regPtr = getRegPtr(regCnt, registerNames, src)
+                                    regPtr = getRegPtr(regCnt, registerNames, src, False)
                                     If regPtr >= 0 Then
-                                        regValue = registerValues(regPtr)
+                                        srcValue = registerValues(regPtr)
                                         If selector <> "" Then
-                                            blockWork.Load(regValue)
-                                            regValue = blockWork.GetInner(selector)
+                                            blockWork.Load(srcValue)
+                                            srcValue = blockWork.GetInner(selector)
                                         End If
                                         If Not csWork.Open("page templates", "name=" & cp.Db.EncodeSQLText(dst)) Then
                                             Call csWork.Close()
@@ -334,7 +371,7 @@ Namespace Contensive.addons.themeManager
                                             Call csWork.SetField("name", dst)
                                         End If
                                         If csWork.OK Then
-                                            Call csWork.SetField("BodyHTML", regValue)
+                                            Call csWork.SetField("BodyHTML", srcValue)
                                         End If
                                         Call csWork.Close()
                                     End If
@@ -345,12 +382,12 @@ Namespace Contensive.addons.themeManager
                                 '
                                 return_progressMessage &= "<br>Get Template Head, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
-                                    regPtr = getRegPtr(regCnt, registerNames, src)
+                                    regPtr = getRegPtr(regCnt, registerNames, src, False)
                                     If regPtr >= 0 Then
-                                        regValue = registerValues(regPtr)
+                                        srcValue = registerValues(regPtr)
                                         If selector <> "" Then
-                                            blockWork.Load(regValue)
-                                            regValue = blockWork.GetInner(selector)
+                                            blockWork.Load(srcValue)
+                                            srcValue = blockWork.GetInner(selector)
                                         End If
                                         If Not csWork.Open("page templates", "name=" & cp.Db.EncodeSQLText(dst)) Then
                                             Call csWork.Close()
@@ -358,7 +395,7 @@ Namespace Contensive.addons.themeManager
                                             Call csWork.SetField("name", dst)
                                         End If
                                         If csWork.OK Then
-                                            Call csWork.SetField("OtherHeadTags", regValue)
+                                            Call csWork.SetField("OtherHeadTags", srcValue)
                                         End If
                                         Call csWork.Close()
                                     End If
@@ -387,7 +424,7 @@ Namespace Contensive.addons.themeManager
         '
         '
         '
-        Private Function getRegPtr(ByRef regCnt As Integer, ByRef registernames() As String, ByVal regName As String) As Integer
+        Private Function getRegPtr(ByRef regCnt As Integer, ByRef registernames() As String, ByVal regName As String, createIfNotFound As Boolean) As Integer
             Dim regPtr As Integer = 0
             If regCnt > 0 Then
                 For regPtr = 0 To regCnt - 1
@@ -397,9 +434,16 @@ Namespace Contensive.addons.themeManager
                 Next
             End If
             If regPtr >= regCnt Then
-                regPtr = regCnt
-                regCnt += 1
-                registernames(regPtr) = regName
+                '
+                ' not found
+                '
+                If createIfNotFound Then
+                    regPtr = regCnt
+                    regCnt += 1
+                    registernames(regPtr) = regName
+                Else
+                    regPtr = -1
+                End If
             End If
             Return regPtr
         End Function
