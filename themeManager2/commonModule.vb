@@ -11,19 +11,24 @@ Namespace Contensive.addons.themeManager
         ' Get Layout,Get www File,Get Content File,Get Inner,Get Outer,Set Inner,Set Outer,Set Layout,Set www File,Set Content File,Set Template
         '
         Public Structure themeImportMacroInstructions
-            Public Const getLayout As Integer = 1
-            Public Const getWwwFile As Integer = 2
-            Public Const getContentFile As Integer = 3
+            Public Const loadLayout As Integer = 1
+            Public Const loadWwwFile As Integer = 2
+            Public Const loadContentFile As Integer = 3
             Public Const getInner As Integer = 4
             Public Const getOuter As Integer = 5
             Public Const setInner As Integer = 6
             Public Const setOuter As Integer = 7
             Public Const setlayout As Integer = 8
-            Public Const setWwwFile As Integer = 9
-            Public Const setContentFile As Integer = 10
-            Public Const setTemplateBody As Integer = 11
-            Public Const setTemplateHead As Integer = 12
-            Public Const setTemplateBodyTag As Integer = 13
+            Public Const saveWwwFile As Integer = 9
+            Public Const saveContentFile As Integer = 10
+            Public Const saveTemplateBody As Integer = 11
+            Public Const saveTemplateHead As Integer = 12
+            Public Const saveTemplateBodyTag As Integer = 13
+            Public Const append As Integer = 14
+            Public Const saveCopy As Integer = 15
+            Public Const loadCopy As Integer = 16
+            Public Const savePage As Integer = 17
+            Public Const loadPage As Integer = 18
         End Structure
         '
         Public Const buttonOK As String = " OK "
@@ -215,6 +220,124 @@ Namespace Contensive.addons.themeManager
                         dst = cs.GetText("destination")
                         selector = cs.GetText("selector")
                         Select Case cs.GetInteger("instructionId")
+                            Case themeImportMacroInstructions.loadPage
+                                return_progressMessage &= "<br>Load Page, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
+                                If (src <> "") And (dst <> "") Then
+                                    dstRegPtr = getRegPtr(regCnt, registerNames, dst, True)
+                                    If dstRegPtr >= 0 Then
+                                        If Not csWork.Open("page content", "name=" & cp.Db.EncodeSQLText(src)) Then
+                                            return_progressMessage &= "<br>***** page content record not found"
+                                        Else
+                                            srcValue = csWork.GetText("copyFilename")
+                                            If selector <> "" Then
+                                                Call blockWork.OpenFile(srcValue)
+                                                srcValue = blockWork.GetInner(selector)
+                                            End If
+                                            registerValues(dstRegPtr) = srcValue
+                                        End If
+                                        Call csWork.Close()
+                                    End If
+                                End If
+                            Case themeImportMacroInstructions.savePage
+                                return_progressMessage &= "<br>Save Page, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
+                                If (src <> "") And (dst <> "") Then
+                                    regPtr = getRegPtr(regCnt, registerNames, src, False)
+                                    If regPtr >= 0 Then
+                                        srcValue = registerValues(regPtr)
+                                        If selector <> "" Then
+                                            blockWork.Load(srcValue)
+                                            srcValue = blockWork.GetInner(selector)
+                                        End If
+                                        If Not csWork.Open("page content", "name=" & cp.Db.EncodeSQLText(dst)) Then
+                                            Call csWork.Close()
+                                            Call csWork.Insert("page content")
+                                            Call csWork.SetField("name", dst)
+                                        End If
+                                        If csWork.OK Then
+                                            Call csWork.SetField("copyFilename", srcValue)
+                                        End If
+                                        Call csWork.Close()
+                                    End If
+                                End If
+                            Case themeImportMacroInstructions.loadCopy
+                                return_progressMessage &= "<br>Load Copy, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
+                                If (src <> "") And (dst <> "") Then
+                                    dstRegPtr = getRegPtr(regCnt, registerNames, dst, True)
+                                    If dstRegPtr >= 0 Then
+                                        If Not csWork.Open("copy content", "name=" & cp.Db.EncodeSQLText(src)) Then
+                                            return_progressMessage &= "<br>***** copy content record not found"
+                                        Else
+                                            srcValue = csWork.GetText("copyFilename")
+                                            If selector <> "" Then
+                                                Call blockWork.OpenFile(srcValue)
+                                                srcValue = blockWork.GetInner(selector)
+                                            End If
+                                            registerValues(dstRegPtr) = srcValue
+                                        End If
+                                        Call csWork.Close()
+                                    End If
+                                End If
+                            Case themeImportMacroInstructions.saveCopy
+                                '
+                                '
+                                '
+                                return_progressMessage &= "<br>Save Copy, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
+                                If (src <> "") And (dst <> "") Then
+                                    regPtr = getRegPtr(regCnt, registerNames, src, False)
+                                    If regPtr >= 0 Then
+                                        srcValue = registerValues(regPtr)
+                                        If selector <> "" Then
+                                            blockWork.Load(srcValue)
+                                            srcValue = blockWork.GetInner(selector)
+                                        End If
+                                        If Not csWork.Open("copy content", "name=" & cp.Db.EncodeSQLText(dst)) Then
+                                            Call csWork.Close()
+                                            Call csWork.Insert("copy content")
+                                            Call csWork.SetField("name", dst)
+                                        End If
+                                        If csWork.OK Then
+                                            Call csWork.SetField("copyFilename", srcValue)
+                                        End If
+                                        Call csWork.Close()
+                                    End If
+                                End If
+                            Case themeImportMacroInstructions.append
+                                '
+                                '
+                                '
+                                return_progressMessage &= "<br>Append, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
+                                If (src <> "") And (dst <> "") Then
+                                    dstRegPtr = getRegPtr(regCnt, registerNames, dst, True)
+                                    If dstRegPtr >= 0 Then
+                                        srcRegPtr = getRegPtr(regCnt, registerNames, src, False)
+                                        If srcRegPtr >= 0 Then
+                                            '
+                                            ' src is a register
+                                            '
+                                            srcValue = registerValues(srcRegPtr)
+                                        Else
+                                            '
+                                            ' src is literal
+                                            '
+                                            srcValue = src
+                                        End If
+                                        If selector = "" Then
+                                            '
+                                            ' simple append
+                                            '
+                                            registerValues(dstRegPtr) &= srcValue
+                                        Else
+                                            '
+                                            ' append inner
+                                            '
+                                            blockWork.Load(srcValue)
+                                            dstValue = blockWork.GetInner(selector) & src
+                                            Call blockWork.SetInner(selector, dstValue)
+                                            dstValue = blockWork.GetHtml()
+                                            registerValues(dstRegPtr) = dstValue
+                                        End If
+                                    End If
+                                End If
                             Case themeImportMacroInstructions.getInner
                                 '
                                 '
@@ -319,27 +442,32 @@ Namespace Contensive.addons.themeManager
                                         registerValues(dstRegPtr) = dstValue
                                     End If
                                 End If
-                            Case themeImportMacroInstructions.getLayout
+                            Case themeImportMacroInstructions.loadLayout
                                 '
+                                ' load wwwfile
                                 '
-                                '
-                                return_progressMessage &= "<br>Get Layout, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
+                                return_progressMessage &= "<br>Load Layout, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
-                                    regPtr = getRegPtr(regCnt, registerNames, dst, True)
-                                    If regPtr >= 0 Then
-                                        srcValue = src
-                                        If selector <> "" Then
-                                            Call blockWork.OpenFile(src)
-                                            srcValue = blockWork.GetInner(selector)
+                                    dstRegPtr = getRegPtr(regCnt, registerNames, dst, True)
+                                    If dstRegPtr >= 0 Then
+                                        If Not csWork.Open("layouts", "name=" & cp.Db.EncodeSQLText(src)) Then
+                                            return_progressMessage &= "<br>***** layout content record not found"
+                                        Else
+                                            srcValue = csWork.GetText("layout")
+                                            If selector <> "" Then
+                                                Call blockWork.OpenFile(srcValue)
+                                                srcValue = blockWork.GetInner(selector)
+                                            End If
+                                            registerValues(dstRegPtr) = srcValue
                                         End If
-                                        registerValues(regPtr) = srcValue
+                                        Call csWork.Close()
                                     End If
                                 End If
-                            Case themeImportMacroInstructions.getWwwFile
+                            Case themeImportMacroInstructions.loadWwwFile
                                 '
+                                ' load wwwfile
                                 '
-                                '
-                                return_progressMessage &= "<br>Get www File, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
+                                return_progressMessage &= "<br>Load www File, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
                                     regPtr = getRegPtr(regCnt, registerNames, dst, True)
                                     If regPtr >= 0 Then
@@ -352,11 +480,11 @@ Namespace Contensive.addons.themeManager
                                         registerValues(regPtr) = srcValue
                                     End If
                                 End If
-                            Case themeImportMacroInstructions.setTemplateBody
+                            Case themeImportMacroInstructions.saveTemplateBody
                                 '
                                 '
                                 '
-                                return_progressMessage &= "<br>Set Template, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
+                                return_progressMessage &= "<br>Save Template Body, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
                                     regPtr = getRegPtr(regCnt, registerNames, src, False)
                                     If regPtr >= 0 Then
@@ -376,11 +504,11 @@ Namespace Contensive.addons.themeManager
                                         Call csWork.Close()
                                     End If
                                 End If
-                            Case themeImportMacroInstructions.setTemplateHead
+                            Case themeImportMacroInstructions.saveTemplateHead
                                 '
                                 '
                                 '
-                                return_progressMessage &= "<br>Get Template Head, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
+                                return_progressMessage &= "<br>SAve Template Head, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
                                     regPtr = getRegPtr(regCnt, registerNames, src, False)
                                     If regPtr >= 0 Then
@@ -426,6 +554,8 @@ Namespace Contensive.addons.themeManager
         '
         Private Function getRegPtr(ByRef regCnt As Integer, ByRef registernames() As String, ByVal regName As String, createIfNotFound As Boolean) As Integer
             Dim regPtr As Integer = 0
+            '
+            regName = regName.Trim
             If regCnt > 0 Then
                 For regPtr = 0 To regCnt - 1
                     If (registernames(regPtr) = regName) Then
