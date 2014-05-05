@@ -29,6 +29,11 @@ Namespace Contensive.addons.themeManager
             Public Const loadCopy As Integer = 16
             Public Const savePage As Integer = 17
             Public Const loadPage As Integer = 18
+            Public Const findReplace As Integer = 19
+            Public Const setHref As Integer = 20
+            Public Const setSrc As Integer = 21
+            Public Const setClass As Integer = 22
+            Public Const setId As Integer = 23
         End Structure
         '
         Public Const buttonOK As String = " OK "
@@ -199,7 +204,8 @@ Namespace Contensive.addons.themeManager
                 Dim blockWork As CPBlockBaseClass = cp.BlockNew()
                 Dim src As String = ""
                 Dim dst As String = ""
-                Dim selector As String = ""
+                Dim find As String = ""
+                Dim replace As String = ""
                 Dim regName As String = ""
                 Dim regCnt As Integer = 0
                 Dim regPtr As Integer
@@ -207,6 +213,9 @@ Namespace Contensive.addons.themeManager
                 Dim dstRegPtr As Integer = 0
                 Dim srcValue As String = ""
                 Dim dstValue As String = ""
+                Dim replacePtr As Integer = 0
+                Dim replaceValue As String = ""
+
                 '
                 return_progressMessage = ""
                 If cs.Open("theme import macros", "id=" & macroId) Then
@@ -218,10 +227,53 @@ Namespace Contensive.addons.themeManager
                     Do
                         src = cs.GetText("source")
                         dst = cs.GetText("destination")
-                        selector = cs.GetText("selector")
+                        find = cs.GetText("find")
+                        replace = cs.GetText("replace")
                         Select Case cs.GetInteger("instructionId")
+                            Case themeImportMacroInstructions.findReplace
+                                '
+                                ' does find [find] and replace [replace] from src to dst
+                                ' if find="" dst is unchanged
+                                '
+                                return_progressMessage &= "<br>FindReplace, src=[" & src & "], find=[" & find & "], replace=[" & replace & "], dst=[" & dst & "]"
+                                If (src <> "") And (dst <> "") Then
+                                    dstRegPtr = getRegPtr(regCnt, registerNames, dst, True)
+                                    If dstRegPtr >= 0 Then
+                                        srcRegPtr = getRegPtr(regCnt, registerNames, src, False)
+                                        If srcRegPtr >= 0 Then
+                                            '
+                                            ' src is a register
+                                            '
+                                            srcValue = registerValues(srcRegPtr)
+                                        Else
+                                            '
+                                            ' src is literal
+                                            '
+                                            srcValue = src
+                                        End If
+                                        replacePtr = getRegPtr(regCnt, registerNames, replace, False)
+                                        If replacePtr >= 0 Then
+                                            '
+                                            ' replace is a register
+                                            '
+                                            replaceValue = registerValues(replacePtr)
+                                        Else
+                                            '
+                                            ' replace is a literal
+                                            '
+                                            replaceValue = replace
+                                        End If
+                                        If find <> "" Then
+                                            dstValue = dstValue.Replace(find, replaceValue)
+                                            registerValues(dstRegPtr) = dstValue
+                                        End If
+                                    End If
+                                End If
                             Case themeImportMacroInstructions.loadPage
-                                return_progressMessage &= "<br>Load Page, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
+                                '
+                                ' load page content where name=[src], optionally selects inner [find], saves in register [dst]
+                                '
+                                return_progressMessage &= "<br>Load Page, src=[" & src & "], find=[" & find & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
                                     dstRegPtr = getRegPtr(regCnt, registerNames, dst, True)
                                     If dstRegPtr >= 0 Then
@@ -229,24 +281,31 @@ Namespace Contensive.addons.themeManager
                                             return_progressMessage &= "<br>***** page content record not found"
                                         Else
                                             srcValue = csWork.GetText("copyFilename")
-                                            If selector <> "" Then
+                                            If find = "" Then
+                                                dstValue = srcValue
+                                            Else
                                                 Call blockWork.OpenFile(srcValue)
-                                                srcValue = blockWork.GetInner(selector)
+                                                dstValue = blockWork.GetInner(find)
                                             End If
-                                            registerValues(dstRegPtr) = srcValue
+                                            registerValues(dstRegPtr) = dstValue
                                         End If
                                         Call csWork.Close()
                                     End If
                                 End If
                             Case themeImportMacroInstructions.savePage
-                                return_progressMessage &= "<br>Save Page, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
+                                '
+                                ' saves register [src], optionally selects inner [find], to page content name=[dst]
+                                '
+                                return_progressMessage &= "<br>Save Page, src=[" & src & "], find=[" & find & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
-                                    regPtr = getRegPtr(regCnt, registerNames, src, False)
-                                    If regPtr >= 0 Then
-                                        srcValue = registerValues(regPtr)
-                                        If selector <> "" Then
+                                    srcRegPtr = getRegPtr(regCnt, registerNames, src, False)
+                                    If srcRegPtr >= 0 Then
+                                        srcValue = registerValues(srcRegPtr)
+                                        If find = "" Then
+                                            dstValue = srcValue
+                                        Else
                                             blockWork.Load(srcValue)
-                                            srcValue = blockWork.GetInner(selector)
+                                            dstValue = blockWork.GetInner(find)
                                         End If
                                         If Not csWork.Open("page content", "name=" & cp.Db.EncodeSQLText(dst)) Then
                                             Call csWork.Close()
@@ -254,13 +313,16 @@ Namespace Contensive.addons.themeManager
                                             Call csWork.SetField("name", dst)
                                         End If
                                         If csWork.OK Then
-                                            Call csWork.SetField("copyFilename", srcValue)
+                                            Call csWork.SetField("copyFilename", dstValue)
                                         End If
                                         Call csWork.Close()
                                     End If
                                 End If
                             Case themeImportMacroInstructions.loadCopy
-                                return_progressMessage &= "<br>Load Copy, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
+                                '
+                                ' reads copy content where name=[src], optionally selects inner [find], saves in register [dst]
+                                '
+                                return_progressMessage &= "<br>Load Copy, src=[" & src & "], find=[" & find & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
                                     dstRegPtr = getRegPtr(regCnt, registerNames, dst, True)
                                     If dstRegPtr >= 0 Then
@@ -268,27 +330,31 @@ Namespace Contensive.addons.themeManager
                                             return_progressMessage &= "<br>***** copy content record not found"
                                         Else
                                             srcValue = csWork.GetText("copyFilename")
-                                            If selector <> "" Then
+                                            If find = "" Then
+                                                dstValue = srcValue
+                                            Else
                                                 Call blockWork.OpenFile(srcValue)
-                                                srcValue = blockWork.GetInner(selector)
+                                                dstValue = blockWork.GetInner(find)
                                             End If
-                                            registerValues(dstRegPtr) = srcValue
+                                            registerValues(dstRegPtr) = dstValue
                                         End If
                                         Call csWork.Close()
                                     End If
                                 End If
                             Case themeImportMacroInstructions.saveCopy
                                 '
+                                ' saves register [src], optionally selects inner [find], to copy content name=[dst]
                                 '
-                                '
-                                return_progressMessage &= "<br>Save Copy, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
+                                return_progressMessage &= "<br>Save Copy, src=[" & src & "], find=[" & find & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
                                     regPtr = getRegPtr(regCnt, registerNames, src, False)
                                     If regPtr >= 0 Then
                                         srcValue = registerValues(regPtr)
-                                        If selector <> "" Then
+                                        If find = "" Then
+                                            dstValue = srcValue
+                                        Else
                                             blockWork.Load(srcValue)
-                                            srcValue = blockWork.GetInner(selector)
+                                            dstValue = blockWork.GetInner(find)
                                         End If
                                         If Not csWork.Open("copy content", "name=" & cp.Db.EncodeSQLText(dst)) Then
                                             Call csWork.Close()
@@ -296,19 +362,20 @@ Namespace Contensive.addons.themeManager
                                             Call csWork.SetField("name", dst)
                                         End If
                                         If csWork.OK Then
-                                            Call csWork.SetField("copyFilename", srcValue)
+                                            Call csWork.SetField("copyFilename", dstValue)
                                         End If
                                         Call csWork.Close()
                                     End If
                                 End If
                             Case themeImportMacroInstructions.append
                                 '
+                                ' appends [src],  to optionally selected inner [find] of register [dst]
                                 '
-                                '
-                                return_progressMessage &= "<br>Append, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
+                                return_progressMessage &= "<br>Append, src=[" & src & "], find=[" & find & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
                                     dstRegPtr = getRegPtr(regCnt, registerNames, dst, True)
                                     If dstRegPtr >= 0 Then
+                                        dstValue = registerValues(dstRegPtr)
                                         srcRegPtr = getRegPtr(regCnt, registerNames, src, False)
                                         If srcRegPtr >= 0 Then
                                             '
@@ -321,28 +388,39 @@ Namespace Contensive.addons.themeManager
                                             '
                                             srcValue = src
                                         End If
-                                        If selector = "" Then
+                                        replacePtr = getRegPtr(regCnt, registerNames, replace, False)
+                                        If replacePtr >= 0 Then
+                                            '
+                                            ' replace is a register
+                                            '
+                                            replaceValue = registerValues(replacePtr)
+                                        Else
+                                            '
+                                            ' replace is a literal
+                                            '
+                                            replaceValue = replace
+                                        End If
+                                        If find = "" Then
                                             '
                                             ' simple append
                                             '
-                                            registerValues(dstRegPtr) &= srcValue
+                                            dstValue = srcValue & replaceValue
                                         Else
                                             '
                                             ' append inner
                                             '
                                             blockWork.Load(srcValue)
-                                            dstValue = blockWork.GetInner(selector) & src
-                                            Call blockWork.SetInner(selector, dstValue)
+                                            Call blockWork.SetInner(find, blockWork.GetInner(find) & replaceValue)
                                             dstValue = blockWork.GetHtml()
-                                            registerValues(dstRegPtr) = dstValue
                                         End If
+                                        registerValues(dstRegPtr) = dstValue
                                     End If
                                 End If
                             Case themeImportMacroInstructions.getInner
                                 '
+                                ' gets [src], optionally selects inner [find], to register [dst]
                                 '
-                                '
-                                return_progressMessage &= "<br>Get Inner, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
+                                return_progressMessage &= "<br>Get Inner, src=[" & src & "], find=[" & find & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
                                     dstRegPtr = getRegPtr(regCnt, registerNames, dst, True)
                                     If dstRegPtr >= 0 Then
@@ -358,16 +436,20 @@ Namespace Contensive.addons.themeManager
                                             '
                                             srcValue = src
                                         End If
-                                        blockWork.Load(srcValue)
-                                        srcValue = blockWork.GetInner(selector)
-                                        registerValues(dstRegPtr) = srcValue
+                                        If find <> "" Then
+                                            blockWork.Load(srcValue)
+                                            dstValue = blockWork.GetInner(find)
+                                        Else
+                                            dstValue = srcValue
+                                        End If
+                                        registerValues(dstRegPtr) = dstValue
                                     End If
                                 End If
                             Case themeImportMacroInstructions.getOuter
                                 '
+                                ' gets [src], optionally selects outer [find], to register [dst]
                                 '
-                                '
-                                return_progressMessage &= "<br>Get Outer, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
+                                return_progressMessage &= "<br>Get Outer, src=[" & src & "], find=[" & find & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
                                     dstRegPtr = getRegPtr(regCnt, registerNames, dst, True)
                                     If dstRegPtr >= 0 Then
@@ -384,15 +466,15 @@ Namespace Contensive.addons.themeManager
                                             srcValue = src
                                         End If
                                         blockWork.Load(srcValue)
-                                        srcValue = blockWork.GetOuter(selector)
+                                        srcValue = blockWork.GetOuter(find)
                                         registerValues(dstRegPtr) = srcValue
                                     End If
                                 End If
                             Case themeImportMacroInstructions.setOuter
                                 '
+                                ' saves [src] to outer [find] of register [dst]
                                 '
-                                '
-                                return_progressMessage &= "<br>Set Outer, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
+                                return_progressMessage &= "<br>Set Outer, src=[" & src & "], find=[" & find & "], replace=[" & replace & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
                                     dstRegPtr = getRegPtr(regCnt, registerNames, dst, True)
                                     If dstRegPtr >= 0 Then
@@ -408,18 +490,32 @@ Namespace Contensive.addons.themeManager
                                             '
                                             srcValue = src
                                         End If
+                                        replacePtr = getRegPtr(regCnt, registerNames, replace, False)
+                                        If replacePtr >= 0 Then
+                                            '
+                                            ' replace is a register
+                                            '
+                                            replaceValue = registerValues(replacePtr)
+                                        Else
+                                            '
+                                            ' replace is a literal
+                                            '
+                                            replaceValue = replace
+                                        End If
                                         dstValue = registerValues(dstRegPtr)
-                                        blockWork.Load(dstValue)
-                                        Call blockWork.SetOuter(selector, srcValue)
-                                        dstValue = blockWork.GetHtml()
+                                        If find <> "" Then
+                                            blockWork.Load(dstValue)
+                                            Call blockWork.SetOuter(find, replaceValue)
+                                            dstValue = blockWork.GetHtml()
+                                        End If
                                         registerValues(dstRegPtr) = dstValue
                                     End If
                                 End If
                             Case themeImportMacroInstructions.setInner
                                 '
+                                ' saves [src] to inner [find] of register [dst]
                                 '
-                                '
-                                return_progressMessage &= "<br>Set Inner, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
+                                return_progressMessage &= "<br>Set Inner, src=[" & src & "], find=[" & find & "], replace=[" & replace & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
                                     dstRegPtr = getRegPtr(regCnt, registerNames, dst, True)
                                     If dstRegPtr >= 0 Then
@@ -435,18 +531,32 @@ Namespace Contensive.addons.themeManager
                                             '
                                             srcValue = src
                                         End If
+                                        replacePtr = getRegPtr(regCnt, registerNames, replace, False)
+                                        If replacePtr >= 0 Then
+                                            '
+                                            ' replace is a register
+                                            '
+                                            replaceValue = registerValues(replacePtr)
+                                        Else
+                                            '
+                                            ' replace is a literal
+                                            '
+                                            replaceValue = replace
+                                        End If
                                         dstValue = registerValues(dstRegPtr)
-                                        blockWork.Load(dstValue)
-                                        Call blockWork.SetInner(selector, srcValue)
-                                        dstValue = blockWork.GetHtml()
+                                        If find <> "" Then
+                                            blockWork.Load(dstValue)
+                                            Call blockWork.SetInner(find, replaceValue)
+                                            dstValue = blockWork.GetHtml()
+                                        End If
                                         registerValues(dstRegPtr) = dstValue
                                     End If
                                 End If
                             Case themeImportMacroInstructions.loadLayout
                                 '
-                                ' load wwwfile
+                                ' load layout where name=[src], optionally selects inner [find], saves in register [dst]
                                 '
-                                return_progressMessage &= "<br>Load Layout, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
+                                return_progressMessage &= "<br>Load Layout, src=[" & src & "], find=[" & find & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
                                     dstRegPtr = getRegPtr(regCnt, registerNames, dst, True)
                                     If dstRegPtr >= 0 Then
@@ -454,9 +564,9 @@ Namespace Contensive.addons.themeManager
                                             return_progressMessage &= "<br>***** layout content record not found"
                                         Else
                                             srcValue = csWork.GetText("layout")
-                                            If selector <> "" Then
+                                            If find <> "" Then
                                                 Call blockWork.OpenFile(srcValue)
-                                                srcValue = blockWork.GetInner(selector)
+                                                srcValue = blockWork.GetInner(find)
                                             End If
                                             registerValues(dstRegPtr) = srcValue
                                         End If
@@ -465,33 +575,33 @@ Namespace Contensive.addons.themeManager
                                 End If
                             Case themeImportMacroInstructions.loadWwwFile
                                 '
-                                ' load wwwfile
+                                ' load www file where name=[src], optionally selects inner [find], saves in register [dst]
                                 '
-                                return_progressMessage &= "<br>Load www File, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
+                                return_progressMessage &= "<br>Load www File, src=[" & src & "], find=[" & find & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
                                     regPtr = getRegPtr(regCnt, registerNames, dst, True)
                                     If regPtr >= 0 Then
                                         src = cp.Site.PhysicalWWWPath & src
                                         srcValue = cp.File.Read(src)
-                                        If selector <> "" Then
+                                        If find <> "" Then
                                             Call blockWork.OpenFile(src)
-                                            srcValue = blockWork.GetInner(selector)
+                                            srcValue = blockWork.GetInner(find)
                                         End If
                                         registerValues(regPtr) = srcValue
                                     End If
                                 End If
                             Case themeImportMacroInstructions.saveTemplateBody
                                 '
+                                ' saves register [src], optionally selects inner [find], to template body where name=[dst]
                                 '
-                                '
-                                return_progressMessage &= "<br>Save Template Body, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
+                                return_progressMessage &= "<br>Save Template Body, src=[" & src & "], find=[" & find & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
                                     regPtr = getRegPtr(regCnt, registerNames, src, False)
                                     If regPtr >= 0 Then
                                         srcValue = registerValues(regPtr)
-                                        If selector <> "" Then
+                                        If find <> "" Then
                                             blockWork.Load(srcValue)
-                                            srcValue = blockWork.GetInner(selector)
+                                            srcValue = blockWork.GetInner(find)
                                         End If
                                         If Not csWork.Open("page templates", "name=" & cp.Db.EncodeSQLText(dst)) Then
                                             Call csWork.Close()
@@ -506,16 +616,16 @@ Namespace Contensive.addons.themeManager
                                 End If
                             Case themeImportMacroInstructions.saveTemplateHead
                                 '
+                                ' saves register [src], optionally selects inner [find], to template head where name=[dst]
                                 '
-                                '
-                                return_progressMessage &= "<br>SAve Template Head, src=[" & src & "], selector=[" & selector & "], dst=[" & dst & "]"
+                                return_progressMessage &= "<br>SAve Template Head, src=[" & src & "], find=[" & find & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
                                     regPtr = getRegPtr(regCnt, registerNames, src, False)
                                     If regPtr >= 0 Then
                                         srcValue = registerValues(regPtr)
-                                        If selector <> "" Then
+                                        If find <> "" Then
                                             blockWork.Load(srcValue)
-                                            srcValue = blockWork.GetInner(selector)
+                                            srcValue = blockWork.GetInner(find)
                                         End If
                                         If Not csWork.Open("page templates", "name=" & cp.Db.EncodeSQLText(dst)) Then
                                             Call csWork.Close()
