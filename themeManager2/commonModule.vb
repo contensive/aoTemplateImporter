@@ -236,26 +236,36 @@ Namespace Contensive.addons.themeManager
                                 ' saves register [src], optionally selects inner [find], to layout name=[dst]
                                 '
                                 return_progressMessage &= "<br>Save Layout, src=[" & src & "], find=[" & find & "], dst=[" & dst & "]"
-                                If (src <> "") And (dst <> "") Then
+                                If (src = "") Then
+                                    return_progressMessage &= ", ERROR: source can not be empty"
+                                ElseIf (dst = "") Then
+                                    return_progressMessage &= ", ERROR: destination can not be empty"
+                                Else
                                     regPtr = getRegPtr(regCnt, registerNames, src, False)
-                                    If regPtr >= 0 Then
+                                    If regPtr < 0 Then
+                                        srcValue = src
+                                        return_progressMessage &= ", source is liternal"
+                                    Else
                                         srcValue = registerValues(regPtr)
-                                        If find = "" Then
-                                            dstValue = srcValue
-                                        Else
-                                            blockWork.Load(srcValue)
-                                            dstValue = blockWork.GetInner(find)
-                                        End If
-                                        If Not csWork.Open("layouts", "name=" & cp.Db.EncodeSQLText(dst)) Then
-                                            Call csWork.Close()
-                                            Call csWork.Insert("layouts")
-                                            Call csWork.SetField("name", dst)
-                                        End If
-                                        If csWork.OK Then
-                                            Call csWork.SetField("layout", dstValue)
-                                        End If
-                                        Call csWork.Close()
+                                        return_progressMessage &= ", source is register"
                                     End If
+                                    If find = "" Then
+                                        dstValue = srcValue
+                                    Else
+                                        blockWork.Load(srcValue)
+                                        dstValue = blockWork.GetInner(find)
+                                        return_progressMessage &= ", getInner on source"
+                                    End If
+                                    If Not csWork.Open("layouts", "name=" & cp.Db.EncodeSQLText(dst)) Then
+                                        return_progressMessage &= ", create new Layout"
+                                        Call csWork.Close()
+                                        Call csWork.Insert("layouts")
+                                        Call csWork.SetField("name", dst)
+                                    End If
+                                    If csWork.OK Then
+                                        Call csWork.SetField("layout", dstValue)
+                                    End If
+                                    Call csWork.Close()
                                 End If
                             Case themeImportMacroInstructions.insertAfter
                                 '
@@ -450,9 +460,15 @@ Namespace Contensive.addons.themeManager
                                 ' appends [replace] to child of [find] of html [src]
                                 '
                                 return_progressMessage &= "<br>Append, src=[" & src & "], find=[" & find & "], replace=[" & replace & "], dst=[" & dst & "]"
-                                If (src <> "") And (dst <> "") Then
+                                If (src = "") Then
+                                    return_progressMessage &= ", ERROR: source is required"
+                                ElseIf (dst = "") Then
+                                    return_progressMessage &= ", ERROR: destination is required"
+                                Else
                                     dstRegPtr = getRegPtr(regCnt, registerNames, dst, True)
-                                    If dstRegPtr >= 0 Then
+                                    If dstRegPtr < 0 Then
+                                        return_progressMessage &= ", ERROR: destination register not created"
+                                    Else
                                         dstValue = registerValues(dstRegPtr)
                                         srcRegPtr = getRegPtr(regCnt, registerNames, src, False)
                                         If srcRegPtr >= 0 Then
@@ -460,11 +476,13 @@ Namespace Contensive.addons.themeManager
                                             ' src is a register
                                             '
                                             srcValue = registerValues(srcRegPtr)
+                                            return_progressMessage &= ", source is a register"
                                         Else
                                             '
                                             ' src is literal
                                             '
                                             srcValue = src
+                                            return_progressMessage &= ", source is a literal"
                                         End If
                                         replacePtr = getRegPtr(regCnt, registerNames, replace, False)
                                         If replacePtr >= 0 Then
@@ -472,17 +490,20 @@ Namespace Contensive.addons.themeManager
                                             ' replace is a register
                                             '
                                             replaceValue = registerValues(replacePtr)
+                                            return_progressMessage &= ", replace is a register"
                                         Else
                                             '
                                             ' replace is a literal
                                             '
                                             replaceValue = replace
+                                            return_progressMessage &= ", replace is a literal"
                                         End If
                                         If find = "" Then
                                             '
                                             ' simple append
                                             '
                                             dstValue = srcValue & replaceValue
+                                            return_progressMessage &= ", append source to destination"
                                         Else
                                             '
                                             ' append inner
@@ -490,6 +511,7 @@ Namespace Contensive.addons.themeManager
                                             blockWork.Load(srcValue)
                                             Call blockWork.SetInner(find, blockWork.GetInner(find) & replaceValue)
                                             dstValue = blockWork.GetHtml()
+                                            return_progressMessage &= ", append source to child nodes of selector in destination"
                                         End If
                                         registerValues(dstRegPtr) = dstValue
                                     End If
