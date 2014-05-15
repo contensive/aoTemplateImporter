@@ -232,6 +232,33 @@ Namespace Contensive.addons.themeManager
                         find = cs.GetText("find")
                         replace = cs.GetText("replace")
                         Select Case cs.GetInteger("instructionId")
+                            Case themeImportMacroInstructions.saveWwwFile
+                                '
+                                ' saves register [src], optionally selects inner [find], to www file=[dst]
+                                '
+                                return_progressMessage &= "<br>Save File, src=[" & src & "], find=[" & find & "], dst=[" & dst & "]"
+                                If (src = "") Then
+                                    return_progressMessage &= ", ERROR: source can not be empty"
+                                ElseIf (dst = "") Then
+                                    return_progressMessage &= ", ERROR: destination can not be empty"
+                                Else
+                                    regPtr = getRegPtr(regCnt, registerNames, src, False)
+                                    If regPtr < 0 Then
+                                        srcValue = src
+                                        return_progressMessage &= ", source is liternal"
+                                    Else
+                                        srcValue = registerValues(regPtr)
+                                        return_progressMessage &= ", source is register"
+                                    End If
+                                    If find = "" Then
+                                        dstValue = srcValue
+                                    Else
+                                        blockWork.Load(srcValue)
+                                        dstValue = blockWork.GetInner(find)
+                                        return_progressMessage &= ", getInner on source"
+                                    End If
+                                    Call cp.File.Save(dst, dstValue)
+                                End If
                             Case themeImportMacroInstructions.saveStyle
                                 '
                                 ' saves register [src], optionally selects inner [find], to shared style=[dst]
