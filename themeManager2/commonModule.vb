@@ -257,7 +257,7 @@ Namespace Contensive.addons.themeManager
                                         dstValue = blockWork.GetInner(find)
                                         return_progressMessage &= ", getInner on source"
                                     End If
-                                    Call cp.File.Save(dst, dstValue)
+                                    Call cp.File.Save(cp.Site.PhysicalWWWPath & dst, dstValue)
                                 End If
                             Case themeImportMacroInstructions.saveStyle
                                 '
@@ -525,9 +525,7 @@ Namespace Contensive.addons.themeManager
                                 ' appends [replace] to child of [find] of html [src]
                                 '
                                 return_progressMessage &= "<br>Append, src=[" & src & "], find=[" & find & "], replace=[" & replace & "], dst=[" & dst & "]"
-                                If (src = "") Then
-                                    return_progressMessage &= ", ERROR: source is required"
-                                ElseIf (dst = "") Then
+                                If (dst = "") Then
                                     return_progressMessage &= ", ERROR: destination is required"
                                 Else
                                     dstRegPtr = getRegPtr(regCnt, registerNames, dst, True)
@@ -568,7 +566,7 @@ Namespace Contensive.addons.themeManager
                                             ' simple append
                                             '
                                             dstValue = srcValue & replaceValue
-                                            return_progressMessage &= ", append source to destination"
+                                            return_progressMessage &= ", append replace to source, save to destination"
                                         Else
                                             '
                                             ' append inner
@@ -576,7 +574,7 @@ Namespace Contensive.addons.themeManager
                                             blockWork.Load(srcValue)
                                             Call blockWork.SetInner(find, blockWork.GetInner(find) & replaceValue)
                                             dstValue = blockWork.GetHtml()
-                                            return_progressMessage &= ", append source to child nodes of selector in destination"
+                                            return_progressMessage &= ", append replace as last child node of selector in source, save to destination"
                                         End If
                                         registerValues(dstRegPtr) = dstValue
                                     End If
@@ -667,7 +665,7 @@ Namespace Contensive.addons.themeManager
                                             '
                                             replaceValue = replace
                                         End If
-                                        dstValue = registerValues(dstRegPtr)
+                                        dstValue = srcValue
                                         If find <> "" Then
                                             blockWork.Load(dstValue)
                                             Call blockWork.SetOuter(find, replaceValue)
@@ -690,11 +688,13 @@ Namespace Contensive.addons.themeManager
                                             ' src is a register
                                             '
                                             srcValue = registerValues(srcRegPtr)
+                                            return_progressMessage &= ", src is a register"
                                         Else
                                             '
                                             ' src is literal
                                             '
                                             srcValue = src
+                                            return_progressMessage &= ", src is literal"
                                         End If
                                         replacePtr = getRegPtr(regCnt, registerNames, replace, False)
                                         If replacePtr >= 0 Then
@@ -702,13 +702,15 @@ Namespace Contensive.addons.themeManager
                                             ' replace is a register
                                             '
                                             replaceValue = registerValues(replacePtr)
+                                            return_progressMessage &= ", replace  is a register"
                                         Else
                                             '
                                             ' replace is a literal
                                             '
                                             replaceValue = replace
+                                            return_progressMessage &= ", replace is literal"
                                         End If
-                                        dstValue = registerValues(dstRegPtr)
+                                        dstValue = srcValue
                                         If find <> "" Then
                                             blockWork.Load(dstValue)
                                             Call blockWork.SetInner(find, replaceValue)
@@ -783,7 +785,7 @@ Namespace Contensive.addons.themeManager
                                 '
                                 ' saves register [src], optionally selects inner [find], to template head where name=[dst]
                                 '
-                                return_progressMessage &= "<br>SAve Template Head, src=[" & src & "], find=[" & find & "], dst=[" & dst & "]"
+                                return_progressMessage &= "<br>Save Template Head, src=[" & src & "], find=[" & find & "], dst=[" & dst & "]"
                                 If (src <> "") And (dst <> "") Then
                                     regPtr = getRegPtr(regCnt, registerNames, src, False)
                                     If regPtr >= 0 Then
@@ -804,10 +806,10 @@ Namespace Contensive.addons.themeManager
                                     End If
                                 End If
                             Case Else
-
                                 '
                                 '
                                 '
+                                return_progressMessage &= "<br>Unknown Command, instructionId=[" & cs.GetInteger("instructionId") & "], src=[" & src & "], find=[" & find & "], dst=[" & dst & "]"
                         End Select
                         '
                         '
@@ -851,6 +853,20 @@ Namespace Contensive.addons.themeManager
                 End If
             End If
             Return regPtr
+        End Function
+        '
+        Friend Function cpVisitGetText(ByVal cp As CPBaseClass, ByVal propertyName As String, Optional ByVal defaultPropertyValue As String = "") As String
+            Dim returnString As String = ""
+            Try
+                returnString = cp.Visit.GetText(propertyName, defaultPropertyValue)
+                If (returnString Is Nothing) Then
+                    returnString = ""
+                End If
+            Catch ex As Exception
+                returnString = ""
+
+            End Try
+            Return returnString
         End Function
     End Module
 End Namespace

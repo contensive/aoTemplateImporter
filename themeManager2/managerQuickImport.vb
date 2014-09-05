@@ -164,8 +164,8 @@ Namespace Contensive.addons.themeManager
                 Dim importMethodId As Integer
                 '
                 If cp.Doc.GetText(rnButton) = "" Then
-                    DefaultLink = cp.Visit.GetText(vpLastLink, "http://www.contensive.com")
-                    TemplateName = cp.Visit.GetText(vpTemplateName, "")
+                    DefaultLink = cpVisitGetText(cp, vpLastLink, "http://www.contensive.com")
+                    TemplateName = cpVisitGetText(cp, vpTemplateName, "")
                     importMethodId = cp.Visit.GetInteger(vpImportMethodId)
                 Else
                     DefaultLink = cp.Doc.GetText(rnImportLink)
